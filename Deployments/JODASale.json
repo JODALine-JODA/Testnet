@@ -1,6 +1,6 @@
 {
   "name": "JODASale",
   "network": "bsc-testnet",
-  "address": "0x9F455cD8CabbC4Db48c953a2Fc228766c610995d",
+  "address": "0xC452EA323404B5339ee650974Ab65729B391De63",
   "abi": "../abi/JODASale.json"
 }
