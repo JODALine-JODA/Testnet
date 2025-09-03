@@ -15,6 +15,11 @@
 				"internalType": "uint256",
 				"name": "tokensPerBNB_",
 				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "minBuyWei_",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "nonpayable",
@@ -80,30 +85,11 @@
 			{
 				"indexed": false,
 				"internalType": "uint256",
-				"name": "capWei",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "windowSecs",
+				"name": "newMinBuyWei",
 				"type": "uint256"
 			}
 		],
-		"name": "CapUpdated",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "minWei",
-				"type": "uint256"
-			}
-		],
-		"name": "MinBuyUpdated",
+		"name": "MinBuyWeiUpdated",
 		"type": "event"
 	},
 	{
@@ -123,19 +109,6 @@
 			}
 		],
 		"name": "OwnershipTransferred",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "maxWei",
-				"type": "uint256"
-			}
-		],
-		"name": "PerTxMaxUpdated",
 		"type": "event"
 	},
 	{
@@ -162,42 +135,11 @@
 		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "capWei",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "windowSecs",
-				"type": "uint256"
-			}
-		],
-		"name": "setCap",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "newMin",
+				"name": "newMinBuyWei",
 				"type": "uint256"
 			}
 		],
 		"name": "setMinBuyWei",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "newMax",
-				"type": "uint256"
-			}
-		],
-		"name": "setPerTxMaxWei",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -240,6 +182,80 @@
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address payable",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "sweepBNB",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "sweepTokens",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "SweptBNB",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "SweptTokens",
+		"type": "event"
 	},
 	{
 		"anonymous": false,
@@ -325,51 +341,6 @@
 	},
 	{
 		"inputs": [],
-		"name": "perTxMaxWei",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "perUserCapWei",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "bnbWei",
-				"type": "uint256"
-			}
-		],
-		"name": "previewTokensForWei",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
 		"name": "saleActive",
 		"outputs": [
 			{
@@ -415,43 +386,6 @@
 				"internalType": "address payable",
 				"name": "",
 				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "windows",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "start",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "spentWei",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "windowSeconds",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
