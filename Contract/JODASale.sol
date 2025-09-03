@@ -6,69 +6,56 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title JODASale
- * @notice Direct sale of JODA for BNB with min/tx limits, rolling per-user cap, and pause control.
- * - tokensPerBNB: JODA per 1 BNB, in token-wei (18 decimals)
- * - minBuyWei: minimum BNB per transaction (owner-settable; defaults to ~0.075 BNB ≈ $30 if BNB≈$400)
- * - perTxMaxWei: optional max BNB per transaction (0 disables)
- * - perUserCapWei + windowSeconds: anti-whale rolling limit per wallet
- * - saleActive: master switch
- * - Contract must hold enough JODA to fulfill buys (fund by transferring JODA to this contract)
+ * @notice Direct sale of JODA for BNB at an owner-settable rate.
+ *         - tokensPerBNB = JODA per 1 BNB, in token-wei (18 decimals).
+ *         - Contract must be funded with JODA (send tokens here).
+ *         - BNB collected is forwarded to `treasury`.
+ *         - Enforces a minimum buy (`minBuyWei`) in BNB-wei.
  */
 contract JODASale is Ownable {
     IERC20 public immutable token;
     address payable public treasury;
 
-    // Pricing & limits
-    uint256 public tokensPerBNB;   // JODA per 1 BNB, in token-wei
-    uint256 public minBuyWei;      // minimum per tx (wei)
-    uint256 public perTxMaxWei;    // optional max per tx (wei), 0 = disabled
+    // JODA tokens per 1 BNB (in token-wei, 18 decimals)
+    uint256 public tokensPerBNB;
 
-    // Pause
+    // Minimum purchase in BNB-wei (e.g., ~$30 worth of BNB)
+    uint256 public minBuyWei;
+
+    // Optional sale toggle
     bool public saleActive = true;
 
-    // Rolling per-user cap
-    uint256 public perUserCapWei = 1 ether; // default 1 BNB/month (change via setCap)
-    uint256 public windowSeconds = 30 days;
-
-    struct Window {
-        uint256 start;
-        uint256 spentWei;
-    }
-    mapping(address => Window) public windows;
-
-    // Events
     event Bought(address indexed buyer, uint256 bnbIn, uint256 tokensOut);
     event TokensPerBNBUpdated(uint256 newRate);
     event TreasuryUpdated(address newTreasury);
-    event CapUpdated(uint256 capWei, uint256 windowSecs);
-    event MinBuyUpdated(uint256 minWei);
-    event PerTxMaxUpdated(uint256 maxWei);
+    event MinBuyWeiUpdated(uint256 newMinBuyWei);
     event SaleActiveSet(bool active);
+    event SweptTokens(address to, uint256 amount);
+    event SweptBNB(address to, uint256 amount);
 
+    /**
+     * @param token_         JODA token address
+     * @param treasury_      where received BNB is sent
+     * @param tokensPerBNB_  JODA per 1 BNB (token-wei, 18 decimals)
+     * @param minBuyWei_     minimum buy in BNB-wei
+     */
     constructor(
         address token_,
         address payable treasury_,
-        uint256 tokensPerBNB_
+        uint256 tokensPerBNB_,
+        uint256 minBuyWei_
     ) Ownable(msg.sender) {
         require(token_ != address(0) && treasury_ != address(0), "zero addr");
         require(tokensPerBNB_ > 0, "rate=0");
         token = IERC20(token_);
         treasury = treasury_;
         tokensPerBNB = tokensPerBNB_;
-
-        // Default ~$30 minimum if BNB ≈ $400: 0.075 BNB = 0.075 * 1e18 wei
-        // You can change this anytime with setMinBuyWei(...)
-        minBuyWei = 75_000_000_000_000_000; // 0.075 BNB in wei
+        minBuyWei = minBuyWei_;
     }
 
     // -------- Views --------
-    function availableTokens() public view returns (uint256) {
+    function availableTokens() external view returns (uint256) {
         return token.balanceOf(address(this));
-    }
-
-    /// @notice Helper for UI: how many JODA would buyer receive for bnbWei?
-    function previewTokensForWei(uint256 bnbWei) external view returns (uint256) {
-        return bnbWei * tokensPerBNB;
     }
 
     // -------- Owner controls --------
@@ -84,21 +71,10 @@ contract JODASale is Ownable {
         emit TreasuryUpdated(newTreasury);
     }
 
-    function setCap(uint256 capWei, uint256 windowSecs) external onlyOwner {
-        require(capWei > 0 && windowSecs > 0, "invalid");
-        perUserCapWei = capWei;
-        windowSeconds = windowSecs;
-        emit CapUpdated(capWei, windowSecs);
-    }
-
-    function setMinBuyWei(uint256 newMin) external onlyOwner {
-        minBuyWei = newMin; // set 0 to disable the minimum
-        emit MinBuyUpdated(newMin);
-    }
-
-    function setPerTxMaxWei(uint256 newMax) external onlyOwner {
-        perTxMaxWei = newMax; // set 0 to disable per-tx ceiling
-        emit PerTxMaxUpdated(newMax);
+    /// @notice Set the minimum buy in BNB-wei (e.g., ~$30 worth of BNB)
+    function setMinBuyWei(uint256 newMinBuyWei) external onlyOwner {
+        minBuyWei = newMinBuyWei;
+        emit MinBuyWeiUpdated(newMinBuyWei);
     }
 
     function setSaleActive(bool active) external onlyOwner {
@@ -111,24 +87,9 @@ contract JODASale is Ownable {
 
     function buy() public payable {
         require(saleActive, "sale inactive");
-        require(msg.value > 0, "no bnb sent");
-
-        // min / per-tx max
         require(msg.value >= minBuyWei, "below minimum buy");
-        if (perTxMaxWei > 0) {
-            require(msg.value <= perTxMaxWei, "over per-tx max");
-        }
 
-        // rolling per-user cap
-        Window storage w = windows[msg.sender];
-        if (block.timestamp > w.start + windowSeconds) {
-            w.start = block.timestamp;
-            w.spentWei = 0;
-        }
-        require(w.spentWei + msg.value <= perUserCapWei, "over per-user cap");
-        w.spentWei += msg.value;
-
-        // compute & deliver tokens
+        // tokensOut = msg.value (BNB-wei) * tokensPerBNB (token-wei per 1 BNB)
         uint256 tokensOut = msg.value * tokensPerBNB;
         require(token.transfer(msg.sender, tokensOut), "token transfer failed");
 
@@ -137,5 +98,17 @@ contract JODASale is Ownable {
         require(ok, "treasury transfer failed");
 
         emit Bought(msg.sender, msg.value, tokensOut);
+    }
+
+    // -------- Safety / Recovery --------
+    function sweepTokens(address to, uint256 amount) external onlyOwner {
+        require(token.transfer(to, amount), "sweep tokens failed");
+        emit SweptTokens(to, amount);
+    }
+
+    function sweepBNB(address payable to, uint256 amount) external onlyOwner {
+        (bool ok, ) = to.call{value: amount}("");
+        require(ok, "sweep bnb failed");
+        emit SweptBNB(to, amount);
     }
 }
