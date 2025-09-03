@@ -1,1 +1,6 @@
-
+{
+  "name": "JODAStaking",
+  "network": "bsc-testnet",
+  "address": "0xee5ef7b0140a061032613F157c8366D5a29ABB95",
+  "abi": "../abi/JODAStaking.json"
+}
