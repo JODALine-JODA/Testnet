@@ -1,1 +1,62 @@
+Contract: JODA.sol
+Network: BSC Testnet
+Address: <fill latest>
+ABI: abi/JODA.json
 
+What this contract does
+
+ERC20 token with hard cap (set in constructor).
+
+Owner-only minting (mint) but never above cap.
+
+Burn available to anyone for their own tokens.
+
+Initial mint goes to the treasury (constructor arg).
+
+Constructor (deployment)
+
+cap (uint256, 18 decimals) – max supply in wei (e.g., 100M JODA → 100000000 * 1e18).
+
+initialSupply (uint256, 18 decimals) – initial mint to treasury.
+
+treasury (address) – receives initial mint.
+
+Example you used
+
+Cap: 100,000,000 JODA → 100000000000000000000000000
+
+Initial: 20,000,000 JODA → 20000000000000000000000000
+
+Core functions (owner)
+
+mint(address to, uint256 amount) — mint more, respecting the cap.
+
+transferOwnership(address newOwner) — standard OZ.
+
+renounceOwnership() — don’t click this in test unless you intend to lose owner rights.
+
+Common reads (blue buttons)
+
+cap() — returns max supply (wei).
+
+totalSupply() — current minted supply (wei).
+
+balanceOf(address) — balance (wei).
+
+decimals() — 18
+
+name() / symbol() — “Jodaline” / “JODA”
+
+owner() — current owner address.
+
+Quick tests
+
+totalSupply should equal initial mint right after deploy.
+
+After mint(treasury, X), totalSupply increases by X and never beyond cap.
+
+Safety
+
+Never mint above cap; function reverts if attempted.
+
+Keep the owner key safe; losing it means you can’t mint or transfer ownership.
