@@ -64,7 +64,7 @@ Never mint above cap; function reverts if attempted.
 Keep the owner key safe; losing it means you can’t mint or transfer ownership.
 
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 README — JODASale (Direct token sale for BNB)
 Contract: JODASale.sol
@@ -156,7 +156,7 @@ Frequent errors & fixes
 No BNB to treasury: ensure sale is active; buy() forwards to treasury.
 
 
-
+////////////////////////////////////////////////////////////////////////////////////////////
 
 README — JODAStaking (custodial staking with funded rewards)
 
