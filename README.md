@@ -1,166 +1,253 @@
-JODA – Testnet Runbook
-1) Contracts (BSC Testnet)
+README — JODA (ERC20, capped, ownable)
 
-Token (JODA.sol)
-Address: <paste-latest>
-Decimals: 18
-Cap: 100,000,000 JODA (1e26 wei)
-Owner/Treasury: <owner address (MetaMask)>
+Contract: JODA.sol
+Network: BSC Testnet
+Address: <fill latest>
+ABI: abi/JODA.json
 
-Sale (JODASale.sol)
-Address: <paste-latest>
-token: <JODA address>
-treasury: <owner address>
-tokensPerBNB: <current value>
-minBuyWei: <current value>
-saleActive: true|false
+What this contract does
 
-Staking (JODAStaking.sol)
-Address: <paste-latest>
-token: <JODA address>
-Terms enabled (months → APR bps):
+ERC20 token with hard cap (set in constructor).
 
-3 → ?
+Owner-only minting (mint) but never above cap.
 
-6 → 2000 (example 20%)
+Burn available to anyone for their own tokens.
 
-12 → ?
-(update with your values)
+Initial mint goes to the treasury (constructor arg).
 
+Constructor (deployment)
 
-2) Quick Reference (Wei helpers)
+cap (uint256, 18 decimals) – max supply in wei (e.g., 100M JODA → 100000000 * 1e18).
 
-1 BNB = 1_000_000_000_000_000_000 wei (1e18)
+initialSupply (uint256, 18 decimals) – initial mint to treasury.
 
-0.10 BNB = 100_000_000_000_000_000
+treasury (address) – receives initial mint.
 
-0.05 BNB = 50_000_000_000_000_000
+Example you used
 
-0.01 BNB = 10_000_000_000_000_000
+Cap: 100,000,000 JODA → 100000000000000000000000000
 
-JODA amounts (18 decimals)
+Initial: 20,000,000 JODA → 20000000000000000000000000
 
-10 JODA = 10 * 1e18 = 10000000000000000000
+Core functions (owner)
 
-50 JODA = 50 * 1e18 = 50000000000000000000
+mint(address to, uint256 amount) — mint more, respecting the cap.
 
-100 JODA = 100 * 1e18 = 100000000000000000000
+transferOwnership(address newOwner) — standard OZ.
 
+renounceOwnership() — don’t click this in test unless you intend to lose owner rights.
 
-3) Sale math (fixed rate)
+Common reads (blue buttons)
 
-tokensOut = msg.value * tokensPerBNB / 1e18
+cap() — returns max supply (wei).
 
-For $0.50/JODA and $300/BNB → 600 JODA/BNB
-⇒ tokensPerBNB = 600 * 1e18 = 600000000000000000000
+totalSupply() — current minted supply (wei).
 
-Minimum buy (e.g., $30):
-$30 / $300 = 0.1 BNB → minBuyWei = 100000000000000000
+balanceOf(address) — balance (wei).
 
-Update on-chain via owner:
+decimals() — 18
 
-setTokensPerBNB(newRate)
+name() / symbol() — “Jodaline” / “JODA”
 
-setSaleActive(true|false)
+owner() — current owner address.
 
-setMinBuyWei(newMinWei) (if present in your version, else it’s constructor-only)
+Quick tests
 
-4) Daily Quick Test (5–10 min)
-A) Token (JODA)
+totalSupply should equal initial mint right after deploy.
 
-name() → Jodaline
+After mint(treasury, X), totalSupply increases by X and never beyond cap.
 
-cap() → 100000000000000000000000000 (1e26)
+Safety
 
-mint(treasury, 100000000000000000000) → +100 JODA to treasury
+Never mint above cap; function reverts if attempted.
 
-balanceOf(treasury) increased
+Keep the owner key safe; losing it means you can’t mint or transfer ownership.
 
-B) Sale (JODASale)
 
-Fund sale with tokens: from JODA, transfer(<SaleAddress>, 5000000000000000000000) (=5,000 JODA)
 
-Check availableTokens() on Sale → shows 5000e18
 
-Check params:
+README — JODASale (Direct token sale for BNB)
+Contract: JODASale.sol
+Network: BSC Testnet
+Address: <fill latest>
+ABI: abi/JODASale.json
+Token sold: JODA at token = <JODA address>
 
-token() = JODA address
+What this contract does
 
-treasury() = owner address
+Sells JODA for BNB at fixed owner-set rate tokensPerBNB (JODA-wei per 1 BNB).
 
-tokensPerBNB() = expected (e.g., 600e18)
+Forwards received BNB to treasury immediately.
 
-minBuyWei() = expected (e.g., 0.1 BNB)
+Enforces minimum buy (minBuyWei), and optional per-TX cap (perTxMaxWei if present in your version).
 
-Test buy: In JODASale panel, set VALUE (top of Deploy & Run) to 100000000000000000 (0.1 BNB) → buy()
+Owner can pause/resume sale (setSaleActive).
 
-Buyer receives tokens
+Deployment params
 
-Treasury receives BNB
+token — JODA token address.
 
+treasury — wallet to receive BNB.
 
-C) Staking
+tokensPerBNB — JODA per 1 BNB in wei.
 
-From JODA: approve(<Staking>, 100000000000000000000) (100 JODA)
+minBuyWei — minimum BNB per purchase (wei).
 
-In Staking: stake(100000000000000000000, 6) (100 JODA, 6 months)
+Your current test settings (for $0.50/JODA, BNB $300)
 
-stakes(msg.sender, 0) (or stakeCount(msg.sender)) → shows principal, startTime, duration
+tokensPerBNB: 600000000000000000000 (600 * 1e18)
 
-Attempt withdraw(0) before unlock → reverts (good)
+minBuyWei: 50000000000000000 (0.05 BNB)
 
-(Optional owner test) ownerFund(500000000000000000000) → funds rewards
+Why: 1 BNB ($300) / $0.50 = 600 JODA → store 600 * 1e18.
 
-5) Common pitfalls & how to read errors
+Typical owner flow (after deploy)
 
-“below minimum buy”
-Your VALUE (BNB) < minBuyWei. Raise VALUE or lower minBuyWei.
+Fund sale with JODA (so buyers can receive tokens):
+In Remix, open JODA.sol → transfer(saleAddress, amount)
+e.g., send 2,000,000 JODA → 2000000 * 1e18.
 
-Token transfer failed
-Sale contract doesn’t hold enough JODA. Fund it via JODA transfer(Sale, amount).
+Set/adjust price
+setTokensPerBNB(600000000000000000000) to match $0.50/JODA at BNB=$300.
+(You can update later if market changes.)
 
-Decimals / totals look like 0
-Wrong contract address selected in the “At Address” field.
+Set min buy (optional)
+setMinBuyWei(50000000000000000) → 0.05 BNB (≈ $15 at $300/BNB; adjust to match $30 if BNB price shifts).
 
-MetaMask estimates fail
-That’s normal on many reverts—fix input, then try again.
+(Optional) per-TX cap
+If your version includes setPerTxMaxWei, use it to limit whales.
 
+Enable sale
+setSaleActive(true)
 
-6) Routine owner ops (one-liners)
+Buyer flow
 
-Fund sale:
-JODA → transfer(<Sale>, <amountWei>)
+In Remix: JODASale.sol → value (Wei) (e.g., 0.05 BNB → 50000000000000000) → click buy().
+Contract computes tokensOut = msg.value * tokensPerBNB / 1e18 and transfers JODA to buyer.
 
-Change price:
-Sale → setTokensPerBNB(600000000000000000000) (example 600/BNB)
+Admin utilities
 
-Pause/Resume:
-Sale → setSaleActive(false) / true
+sweepTokens(address to, uint256 amount) — recover leftover JODA.
 
-Change treasury:
-Sale → setTreasury(<newOwnerAddress>)
+sweepBNB(address to, uint256 amount) — recover BNB (e.g., if sale was paused mid-send).
 
-Staking: enable/adjust term:
-Staking → setTerm(6, true) and setRateBpsByMonths(6, 2000) (example 20% APR)
+setTreasury(address) — update treasury.
 
-7) What to record after each redeploy
+setSaleActive(bool) — pause/unpause.
 
-Block explorer links for each contract
+Common reads
 
-ABI snapshots (copied from Remix → /abi/*.json)
+availableTokens() — JODA balance in the sale contract.
 
-/deployments/bsc-testnet/*.json with the latest addresses
+minBuyWei() — current min.
 
-Any runtime parameters you set (tokensPerBNB, minBuyWei, enabled terms/rates)
+tokensPerBNB() — current price.
 
-Mini sanity list (before you stop for the day)
+owner() — owner address.
 
- name/symbol/decimals/cap look right on JODA
+treasury() — current treasury.
 
- Sale has tokens (availableTokens() > 0)
+Frequent errors & fixes
 
- A small buy (0.1 BNB) succeeds
+“below minimum buy”: increase value (Wei) or lower minBuyWei.
 
- One stake succeeds & shows correct fields
+“token transfer failed”: you forgot to fund the sale with JODA or sale’s allowance/balance insufficient.
 
- All new addresses saved in /deployments/bsc-testnet/*.json and ABIs updated
+No BNB to treasury: ensure sale is active; buy() forwards to treasury.
+
+
+
+
+README — JODAStaking (custodial staking with funded rewards)
+
+Contract: JODAStaking.sol
+Network: BSC Testnet
+Address: <fill latest>
+ABI: abi/JODAStaking.json
+Token: JODA at <JODA address>
+
+What this contract does
+
+Users approve then stake JODA into this contract for a chosen term.
+
+On withdrawal, they receive principal + reward.
+
+Rewards are paid from this contract’s JODA balance — owner must fund it.
+
+Setup (owner)
+
+Fund rewards pool
+From JODA, transfer(stakingAddress, amount) (e.g., 50,000 JODA for rewards).
+
+Enable terms (months) and set rates
+
+setTerm(uint32 months, bool enabled)
+
+setRateBpsByMonths(uint32 months, uint32 rateBps)
+Example:
+
+3 months → enable + rateBps=800 (8%)
+
+6 months → enable + rateBps=1500 (15%)
+
+12 months → enable + rateBps=2600 (26%)
+
+(Optional) Preview rewards for UX
+previewReward(amount, months) → returns reward (wei) with your rates.
+
+User flow
+
+Approve spending to staking contract in JODA.sol:
+approve(stakingAddress, amount)
+
+Stake:
+stake(uint256 amount, uint32 months) (months must be enabled; amount in wei).
+
+Withdraw (after term):
+withdraw(uint256 stakeId) → returns principal + reward.
+
+Useful reads
+
+canWithdraw(user, stakeId) → bool, amount ready, reward due, etc. (depending on your struct/interface)
+
+stakes(address user) → stake list/structs.
+
+rateBpsByMonths(uint32 months)
+
+isValidTerm(uint32 months)
+
+Admin utilities
+
+ownerFund(uint256 amount) / ownerSweep(uint256 amount) — top up or recover unused rewards (naming can differ slightly based on your version).
+
+transferOwnership(address) — standard OZ.
+
+Frequent errors & fixes
+
+Stake reverts: user didn’t approve enough JODA first.
+
+Withdraw reverts: term not matured (canWithdraw is false) or contract’s JODA balance is insufficient for rewards.
+
+No rewards paid: ensure the contract is funded with enough JODA to cover projected rewards.
+
+Shared quick references
+
+Wei helper
+
+1 BNB = 1e18 wei
+
+0.05 BNB = 50000000000000000 wei
+
+Token math
+
+JODA amounts use 18 decimals.
+
+1,000 JODA = 1000 * 1e18.
+
+Current (test) economics
+
+Target price: $0.50/JODA, BNB assumed $300 → tokensPerBNB = 600e18.
+
+Minimum buy: 0.05 BNB (5e16 wei) → ~30 JODA at the above price.
+
+Adjust with setTokensPerBNB if the BNB price assumption changes.
