@@ -1,0 +1,1667 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>JODA • Buy & Stake (Testnet)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body{font-family:system-ui,Arial;margin:24px;max-width:860px}
+    .card{border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin:12px 0}
+    .row{display:grid;grid-template-columns:200px 1fr;gap:8px;align-items:center}
+    .muted{color:#6b7280}
+    .tabs{display:flex;gap:8px;margin:8px 0 16px}
+    .tabs button{padding:10px 14px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;cursor:pointer}
+    .tabs button.active{background:#111;color:#fff;border-color:#111}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(300px,1fr));gap:16px}
+    .btn{padding:10px 14px;border-radius:10px;border:1px solid #111;background:#111;color:#fff;cursor:pointer}
+    .btn[disabled]{opacity:.5;cursor:not-allowed}
+    input,select{padding:8px;border:1px solid #e5e7eb;border-radius:10px}
+    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
+    .pill{display:inline-block;padding:2px 8px;border:1px solid #e5e7eb;border-radius:999px;margin-right:6px}
+    .danger{color:#b91c1c}
+    .ok{color:#065f46}
+    .warn{color:#92400e}
+    .small{font-size:12px}
+    .center{display:flex;align-items:center;gap:8px}
+  </style>
+</head>
+<body>
+  <h2>JODA • Buy & Stake (BSC Testnet)</h2>
+  <div id="status" class="muted">Connecting…</div>
+
+  <div class="tabs">
+    <button id="tabBuy" class="active">Buy</button>
+    <button id="tabStake">Stake</button>
+    <button id="connectBtn">🔗 Connect Wallet</button>
+<p id="walletAddress"></p>
+  </div>
+
+  <!-- BUY TAB -->
+  <section id="buyTab">
+    <div class="card">
+      <div class="row"><div>Sale Active:</div><div id="saleActive">—</div></div>
+      <div class="row"><div>Min Buy (BNB):</div><div id="minBuy">—</div></div>
+      <div class="row"><div>Tokens per 1 BNB (wei):</div><div id="rate" class="mono">—</div></div>
+      <div class="row"><div>Available (JODA):</div><div id="avail">—</div></div>
+    </div>
+
+    <div class="card grid">
+      <div>
+        <h3>Buy JODA</h3>
+        <div class="center">
+          <label for="bnbIn">BNB to spend:</label>
+          <input id="bnbIn" type="number" step="0.0001" placeholder="0.10" style="width:140px" />
+          <button id="estBtn" class="pill">Estimate</button>
+        </div>
+        <div id="est" style="margin:8px 0; font-weight:600"></div>
+        <button id="buyBtn" class="btn">Buy</button>
+      </div>
+
+      <div>
+        <div class="small muted">Tips:</div>
+        <ul class="small">
+          <li>Min buy enforced by contract (pre-check shown here).</li>
+          <li>Tokens sent immediately after tx confirms.</li>
+          <li>BNB goes to treasury wallet on-chain.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- STAKE TAB -->
+  <section id="stakeTab" style="display:none">
+    <div class="card">
+      <div class="row"><div>Your JODA Balance:</div><div id="myJoda">—</div></div>
+      <div class="row"><div>Approved for Staking:</div><div id="myAllowance">—</div></div>
+      <div class="row"><div>Enabled Terms:</div><div id="terms">—</div></div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Stake</h3>
+        <div class="row"><div>Amount (JODA):</div><div><input id="stakeAmt" type="number" step="0.000001" placeholder="100" /></div></div>
+        <div class="row"><div>Term (months):</div>
+          <div>
+            <select id="stakeTerm"></select>
+            <span id="termRate" class="pill small muted"></span>
+          </div>
+        </div>
+        <div class="row"><div>Preview Reward:</div><div id="rewardPrev">—</div></div>
+        <div class="center" style="gap:12px;margin-top:8px">
+          <button id="approveBtn" class="btn">Approve</button>
+          <button id="stakeBtn" class="btn">Stake</button>
+        </div>
+        <div class="small muted" id="stakeMsg"></div>
+      </div>
+
+      <div class="card">
+        <h3>Your Stakes</h3>
+        <div id="stakeList" class="small">No stakes yet.</div>
+      </div>
+    </div>
+  </section>
+
+  <script type="module">
+/********** 1) FILL THESE **********/
+const RPC = "https://data-seed-prebsc-1-s1.binance.org:8545/";
+
+// ✅ Your deployed addresses (don’t change)
+const TOKEN_ADDRESS   = "0xB2EFA488040B036E50a18C9d2D8110AF743c5504";
+const SALE_ADDRESS    = "0x9146aEE05EbCFD30950D4E964cE256e32E1CbcfD";
+const STAKING_ADDRESS = "0xee5ef7b0140a061032613F157c8366D5a29ABB95";
+
+// ✅ Paste the **arrays** from abi/*.json (just the array, not the whole file)
+const TOKEN_ABI   = [ /* paste abi/JODA.json array here */ ];
+const SALE_ABI    = [ /* paste abi/JODASale.json array here */ ];
+const STAKING_ABI = [ /* paste abi/JODAStaking.json array here */ ];
+
+/********** 2) ethers v6 **********/
+import {
+  BrowserProvider, JsonRpcProvider, Contract,
+  formatEther, parseEther, formatUnits, parseUnits
+} from "https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.min.js";
+
+/********** 3) Tiny helpers **********/
+const $   = (id)=>document.getElementById(id);
+const bn  = (x)=>BigInt(x);
+const toEth = (wei)=>Number(formatEther(wei));
+const fmt   = (n, d=6)=>Number(n).toFixed(d);
+const fmt18 = (wei)=>Number(formatUnits(wei, 18)).toLocaleString(undefined,{maximumFractionDigits:6});
+
+// Global refs we share with your existing UI code
+let provider, signer, user, token, sale, staking;
+
+/********** 4) Contract setup (provider or signer based) **********/
+function makeContracts(p){
+  token   = new Contract(TOKEN_ADDRESS,   TOKEN_ABI,   p);
+  sale    = new Contract(SALE_ADDRESS,    SALE_ABI,    p);
+  staking = new Contract(STAKING_ADDRESS, STAKING_ABI, p);
+}
+
+/********** 5) Chain guard: force BSC Testnet (97) **********/
+const BSC_TESTNET = {
+  chainId:  '0x61',                 // 97
+  chainIdDec: 97,
+  chainName: 'BNB Smart Chain Testnet',
+  rpcUrls:  ['https://data-seed-prebsc-1-s1.binance.org:8545/'],
+  nativeCurrency: { name:'tBNB', symbol:'tBNB', decimals:18 },
+  blockExplorerUrls: ['https://testnet.bscscan.com']
+};
+
+async function ensureBscTestnet(){
+  if(!window.ethereum) return false;
+  const current = await window.ethereum.request({ method: 'eth_chainId' });
+  if(current === BSC_TESTNET.chainId) return true;
+
+  try{
+    await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: BSC_TESTNET.chainId }]
+    });
+    return true;
+  }catch(e){
+    // If chain not added, add it
+    if(e.code === 4902 || (e.data && e.data.originalError?.code === 4902)){
+      await window.ethereum.request({
+        method: 'wallet_addEthereumChain',
+        params: [{
+          chainId: BSC_TESTNET.chainId,
+          chainName: BSC_TESTNET.chainName,
+          rpcUrls: BSC_TESTNET.rpcUrls,
+          nativeCurrency: BSC_TESTNET.nativeCurrency,
+          blockExplorerUrls: BSC_TESTNET.blockExplorerUrls
+        }]
+      });
+      return true;
+    }
+    console.error('Switch chain failed:', e);
+    return false;
+  }
+}
+
+/********** 6) Connect button + listeners **********/
+const connectBtn    = $('connectBtn');
+const walletAddress = $('walletAddress');
+
+connectBtn?.addEventListener('click', async ()=>{
+  if(!window.ethereum){
+    alert('MetaMask not found. Please install it.');
+    return;
+  }
+
+  $('status').textContent = 'Connecting…';
+
+  // Make sure we’re on BSC Testnet
+  const ok = await ensureBscTestnet();
+  if(!ok){
+    $('status').textContent = 'Please switch to BSC Testnet (97).';
+    return;
+  }
+
+  try{
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    walletAddress.textContent = `Connected: ${accounts[0]}`;
+    provider = new BrowserProvider(window.ethereum);
+    signer   = await provider.getSigner();
+    makeContracts(signer); // switch contracts to signer so buttons can send txs
+    user = await signer.getAddress();
+    $('status').textContent = 'Wallet connected.';
+    await refreshAll();     // kick your existing UI refresh after connect
+  }catch(err){
+    console.error(err);
+    $('status').textContent = 'Connection cancelled.';
+  }
+});
+
+// Keep UI in sync if user switches accounts or networks in MetaMask
+if(window.ethereum){
+  window.ethereum.on?.('accountsChanged', async (accs)=>{
+    if(accs?.length){
+      walletAddress.textContent = `Connected: ${accs[0]}`;
+      provider = new BrowserProvider(window.ethereum);
+      signer   = await provider.getSigner();
+      makeContracts(signer);
+      user = await signer.getAddress();
+      await refreshAll();
+    }else{
+      walletAddress.textContent = '';
+      $('status').textContent = 'Disconnected.';
+      // fallback to read-only provider
+      provider = new JsonRpcProvider(RPC);
+      makeContracts(provider);
+      signer = user = undefined;
+      await refreshAll();
+    }
+  });
+
+  window.ethereum.on?.('chainChanged', async ()=>{
+    // Re-run connection checks & refresh
+    await ensureBscTestnet();
+    if(signer){
+      provider = new BrowserProvider(window.ethereum);
+      signer   = await provider.getSigner();
+      makeContracts(signer);
+      user = await signer.getAddress();
+    }else{
+      provider = new JsonRpcProvider(RPC);
+      makeContracts(provider);
+    }
+    await refreshAll();
+  });
+}
+
+/********** 7) Refresh helpers (hook these into your existing UI) **********/
+async function refreshBuy(){
+  try{
+    const [active, minWei, perBNB, avail] = await Promise.all([
+      sale.saleActive(),
+      sale.minBuyWei(),
+      sale.tokensPerBNB(),
+      sale.availableTokens()
+    ]);
+    $('saleActive').textContent = active ? 'Yes' : 'No';
+    $('minBuy').textContent     = fmt18(minWei) + ' BNB';
+    $('perBnb').textContent     = perBNB.toString();
+    $('available').textContent  = fmt18(avail) + ' JODA';
+  }catch(e){ console.error(e); }
+}
+
+async function refreshStake(){
+  try{
+    const addr = user ?? (await token.getAddress?.()) ?? '';
+    $('stakeMsg').textContent = user ? '' : 'Connect wallet to stake.';
+    // You can expand this to list user stakes, rates, terms, etc.
+  }catch(e){ console.error(e); }
+}
+
+async function refreshAll(){
+  await Promise.all([refreshBuy(), refreshStake()]);
+}
+
+/********** 8) Initial boot (read-only if no MetaMask) **********/
+async function init(){
+  $('status').textContent = 'Connecting…';
+
+  if(window.ethereum){
+    // Try to use MetaMask for read-only first (no prompt)
+    try{
+      await ensureBscTestnet();
+      provider = new BrowserProvider(window.ethereum);
+      makeContracts(provider);
+      $('status').textContent = 'Ready.';
+    }catch{
+      provider = new JsonRpcProvider(RPC);
+      makeContracts(provider);
+      $('status').textContent = 'Ready (RPC). Click Connect to transact.';
+    }
+  }else{
+    provider = new JsonRpcProvider(RPC);
+    makeContracts(provider);
+    $('status').textContent = 'MetaMask not found. Read-only mode.';
+  }
+
+  await refreshAll();
+}
+
+init();
+
+  // -----------------------------
+  // Contract ABIs
+  // -----------------------------
+
+  // 1. JODA Token ABI
+  const TOKEN_ABI = [
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "cap_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "initialSupply_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "treasury_",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "increasedSupply",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "cap",
+        "type": "uint256"
+      }
+    ],
+    "name": "ERC20ExceededCap",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "spender",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "allowance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "needed",
+        "type": "uint256"
+      }
+    ],
+    "name": "ERC20InsufficientAllowance",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "balance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "needed",
+        "type": "uint256"
+      }
+    ],
+    "name": "ERC20InsufficientBalance",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "approver",
+        "type": "address"
+      }
+    ],
+    "name": "ERC20InvalidApprover",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "cap",
+        "type": "uint256"
+      }
+    ],
+    "name": "ERC20InvalidCap",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "receiver",
+        "type": "address"
+      }
+    ],
+    "name": "ERC20InvalidReceiver",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
+    ],
+    "name": "ERC20InvalidSender",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "spender",
+        "type": "address"
+      }
+    ],
+    "name": "ERC20InvalidSpender",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnableInvalidOwner",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "OwnableUnauthorizedAccount",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "spender",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "Approval",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "Transfer",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "spender",
+        "type": "address"
+      }
+    ],
+    "name": "allowance",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "spender",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "approve",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "balanceOf",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "burn",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "cap",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "decimals",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "mint",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "name",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "symbol",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalSupply",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "transfer",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "transferFrom",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]
+    // 
+
+  // 2. JODA Sale ABI
+  const SALE_ABI = [
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token_",
+        "type": "address"
+      },
+      {
+        "internalType": "address payable",
+        "name": "treasury_",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokensPerBNB_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minBuyWei_",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnableInvalidOwner",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "OwnableUnauthorizedAccount",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "buyer",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "bnbIn",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "tokensOut",
+        "type": "uint256"
+      }
+    ],
+    "name": "Bought",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newMinBuyWei",
+        "type": "uint256"
+      }
+    ],
+    "name": "MinBuyWeiUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "active",
+        "type": "bool"
+      }
+    ],
+    "name": "SaleActiveSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "SweptBNB",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "SweptTokens",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newRate",
+        "type": "uint256"
+      }
+    ],
+    "name": "TokensPerBNBUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "newTreasury",
+        "type": "address"
+      }
+    ],
+    "name": "TreasuryUpdated",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "availableTokens",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "buy",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "minBuyWei",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "saleActive",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "newMinBuyWei",
+        "type": "uint256"
+      }
+    ],
+    "name": "setMinBuyWei",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bool",
+        "name": "active",
+        "type": "bool"
+      }
+    ],
+    "name": "setSaleActive",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "newRate",
+        "type": "uint256"
+      }
+    ],
+    "name": "setTokensPerBNB",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address payable",
+        "name": "newTreasury",
+        "type": "address"
+      }
+    ],
+    "name": "setTreasury",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address payable",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "sweepBNB",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "sweepTokens",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "token",
+    "outputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tokensPerBNB",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "treasury",
+    "outputs": [
+      {
+        "internalType": "address payable",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "stateMutability": "payable",
+    "type": "receive"
+  }
+]
+
+  // 3. JODA Staking ABI
+  const STAKING_ABI = [
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token_",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnableInvalidOwner",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "OwnableUnauthorizedAccount",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "ownerFund",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "OwnerFunded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "OwnerSwept",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "ownerSweep",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "months_",
+        "type": "uint32"
+      },
+      {
+        "internalType": "bool",
+        "name": "enabled",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint32",
+        "name": "bps",
+        "type": "uint32"
+      }
+    ],
+    "name": "setTerm",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "months_",
+        "type": "uint32"
+      }
+    ],
+    "name": "stake",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "stakeId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "months",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "startTime",
+        "type": "uint256"
+      }
+    ],
+    "name": "Staked",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "months",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "enabled",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "bps",
+        "type": "uint32"
+      }
+    ],
+    "name": "TermSet",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "stakeId",
+        "type": "uint256"
+      }
+    ],
+    "name": "withdraw",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "stakeId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "principal",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "reward",
+        "type": "uint256"
+      }
+    ],
+    "name": "Withdrawn",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "stakeId",
+        "type": "uint256"
+      }
+    ],
+    "name": "canWithdraw",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "name": "isValidTerm",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "months_",
+        "type": "uint32"
+      }
+    ],
+    "name": "previewReward",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "name": "rateBpsByMonths",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "stakeCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "stakes",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "startTime",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "durationDays",
+        "type": "uint32"
+      },
+      {
+        "internalType": "bool",
+        "name": "claimed",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "token",
+    "outputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
+
+  // -----------------------------
+  // Contract Addresses (Testnet)
+  // -----------------------------
+  const TOKEN_ADDRESS   = "0xB2EFA488040B036E50a18C9d2D8110AF743c5504"; // JODA.sol
+  const SALE_ADDRESS    = "0x9146aEE05EbCFD30950D4E964cE256e32E1CbcfD"; // JODASale.sol
+  const STAKING_ADDRESS = "0xee5ef7b0140a061032613F157c8366D5a29ABB95"; // JODAStaking.sol
+
+  // -----------------------------
+  // Web3 provider setup
+  // -----------------------------
+  let web3;
+  let tokenContract, saleContract, stakingContract;
+
+  async function init() {
+    if (window.ethereum) {
+      web3 = new Web3(window.ethereum);
+      await window.ethereum.request({ method: "eth_requestAccounts" });
+
+      tokenContract   = new web3.eth.Contract(TOKEN_ABI, TOKEN_ADDRESS);
+      saleContract    = new web3.eth.Contract(SALE_ABI, SALE_ADDRESS);
+      stakingContract = new web3.eth.Contract(STAKING_ABI, STAKING_ADDRESS);
+
+      console.log("✅ Contracts ready:", {
+        tokenContract,
+        saleContract,
+        stakingContract
+      });
+    } else {
+      alert("Please install MetaMask to use this app.");
+    }
+  }
+
+  window.addEventListener("load", init);
+</script>
+</body>
+</html>
