@@ -1,15 +1,15 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8">
   <title>JODA • Buy & Stake (BSC Testnet)</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header>
-    <img src="JODALogo.png" alt="JODA Logo" />
-    <h1>JODA • Buy & Stake (BSC Testnet)</h1>
+    <img src="JODALogo.png" alt="JODA Logo">
+    <h1>JODA • Buy & Stake (Testnet)</h1>
   </header>
 
   <div id="status" class="muted">Connecting...</div>
@@ -21,56 +21,31 @@
     <p id="walletAddress"></p>
   </div>
 
-  <!-- Buy tab -->
-  <section id="buyTab">
-    <div class="card grid">
-      <div>Sale Active:</div>            <div id="saleActive">—</div>
-      <div>Min Buy (BNB):</div>          <div id="minBuy">—</div>
-      <div>Tokens per 1 BNB (wei):</div> <div id="tokensPerBNB">—</div>
-      <div>Available (JODA):</div>       <div id="available">—</div>
-    </div>
-
-    <div class="card">
-      <h3>Buy JODA</h3>
-      <label>BNB to spend:
-        <input id="buyBnb" value="0.10" />
-      </label>
-      <button id="estimateBtn" class="btn">Estimate</button>
-      <span id="estimateOut" class="pill mono">—</span>
-      <div class="center" style="margin-top:12px">
-        <button id="buyBtn" class="btn">Buy</button>
-      </div>
-      <div class="small muted" style="margin-top:8px">
-        <div>• Min buy enforced by contract.</div>
-        <div>• Tokens sent after tx confirms.</div>
-        <div>• BNB goes to treasury wallet on-chain.</div>
-      </div>
-    </div>
-
-    <div class="card grid">
-      <div>Your JODA:</div> <div id="walletJoda">—</div>
-      <div>Your BNB:</div>  <div id="walletBnb">—</div>
-    </div>
+  <!-- BUY -->
+  <section id="buySection">
+    <h2>Buy JODA</h2>
+    <p>Enter BNB amount (min $30)</p>
+    <input id="buyAmount" type="number" placeholder="BNB to spend">
+    <button id="buyBtn">Buy</button>
+    <div id="estimateOut"></div>
   </section>
 
-  <!-- Stake tab (basic placeholders; optional) -->
-  <section id="stakeTab" style="display:none">
-    <div class="card">
-      <h3>Stake JODA</h3>
-      <label>Amount (JODA): <input id="stakeAmount" value="10" /></label>
-      <label>Months:
-        <select id="stakeMonths">
-          <option value="3">3</option>
-          <option value="6">6</option>
-          <option value="12">12</option>
-        </select>
-      </label>
-      <button id="stakeBtn" class="btn">Stake</button>
-      <div id="stakeMsg" class="small muted"></div>
-    </div>
+  <!-- STAKE -->
+  <section id="stakeSection" style="display:none">
+    <h2>Stake JODA</h2>
+    <input id="stakeAmount" type="number" placeholder="JODA to stake">
+    <select id="stakeMonths">
+      <option value="6">6 months</option>
+      <option value="12">12 months</option>
+      <option value="24">24 months</option>
+    </select>
+    <button id="stakeBtn">Stake</button>
+    <button id="withdrawBtn">Withdraw Stake</button>
   </section>
 
-  <!-- Ethers-powered app -->
-  <script type="module" src="app.js"></script>
+  <!-- Toast container -->
+  <div id="toastStack" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="app.js"></script>
 </body>
 </html>
