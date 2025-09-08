@@ -107,4 +107,54 @@ input, select {
   font-size: 1.1rem;
 }
 .toast .close:hover{ color: #fff; }
+/* ===== Affiliates / Shopping ===== */
+.affiliates{
+  max-width: 980px;
+  margin: 48px auto 80px;
+  padding: 24px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  text-align: center;
+}
+.affiliates h3{
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+.affiliates .small{ font-size: 12px; }
+
+.aff-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(160px,1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.aff-card{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 12px;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.18);
+  border: 1px solid rgba(255,255,255,0.10);
+  text-decoration: none;
+  color: inherit;
+  transition: transform .15s ease, background .15s ease, border-color .15s ease;
+}
+.aff-card:hover{
+  transform: translateY(-2px);
+  background: rgba(0,0,0,0.28);
+  border-color: rgba(255,255,255,0.22);
+}
+.aff-card img{
+  height: 28px;
+  object-fit: contain;
+  filter: brightness(1.1) contrast(1.05);
+}
+.aff-card span{
+  font-size: 14px;
+  opacity: .9;
+}
 
