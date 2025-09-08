@@ -1,1 +1,110 @@
+/* === JODA Styles === */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #0a192f, #1e3a8a);
+  color: #fff;
+  text-align: center;
+}
+
+header {
+  padding: 20px;
+  background: rgba(0,0,0,0.3);
+  border-bottom: 2px solid #2563eb;
+}
+
+header img {
+  width: 100px;
+  height: auto;
+}
+
+header h1 {
+  margin: 10px 0 0;
+  font-size: 1.8em;
+  color: #60a5fa;
+}
+
+button {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 1em;
+  cursor: pointer;
+  margin: 10px;
+  transition: background 0.2s ease;
+}
+
+button:hover {
+  background: #1e40af;
+}
+
+section {
+  padding: 30px;
+}
+
+input, select {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #2563eb;
+  margin: 10px;
+}
+
+.muted { opacity: 0.6; }
+
+/* ===== Toasts ===== */
+#toastStack{
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 9999;
+}
+
+.toast{
+  min-width: 220px;
+  max-width: 360px;
+  background: #0b1b33;
+  color: #fff;
+  border: 1px solid #2563eb;
+  border-left-width: 6px;
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.35);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity .18s ease, transform .18s ease;
+  font-size: .95rem;
+  line-height: 1.3;
+}
+
+.toast.show{
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast.success{ border-left-color: #17c964; }
+.toast.error{   border-left-color: #ef4444; }
+.toast.info{    border-left-color: #3b82f6; }
+
+.toast .title{
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.toast .msg{
+  opacity: .9;
+}
+
+.toast .close{
+  background: transparent;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  float: right;
+  font-size: 1.1rem;
+}
+.toast .close:hover{ color: #fff; }
 
