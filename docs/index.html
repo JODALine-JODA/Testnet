@@ -1,50 +1,126 @@
-/* ===== Affiliates / Shopping ===== */
-.affiliates{
-  max-width: 980px;
-  margin: 48px auto 80px;
-  padding: 24px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 14px;
-  text-align: center;
-}
-.affiliates h3{
-  margin: 0 0 6px;
-  font-weight: 700;
-}
-.affiliates .small{ font-size: 12px; }
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <title>JODA • Buy & Stake (Testnet)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <img src="JODALogo.png" alt="JODA Logo" />
+      <div>
+        <h1>JODA • Buy & Stake (BSC Testnet)</h1>
+        <small class="muted">Secure presale & staking on BSC Testnet</small>
+      </div>
+    </div>
 
-.aff-grid{
-  display: grid;
-  grid-template-columns: repeat(auto-fit,minmax(160px,1fr));
-  gap: 14px;
-  margin-top: 16px;
-}
+    <div class="actions">
+      <button id="themeBtn" class="ghost" title="Toggle theme">🌓 Theme</button>
+      <button id="connectBtn">Connect Wallet</button>
+      <button id="disconnectBtn" class="ghost">Disconnect</button>
+    </div>
+  </header>
 
-.aff-card{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 16px 12px;
-  border-radius: 12px;
-  background: rgba(0,0,0,0.18);
-  border: 1px solid rgba(255,255,255,0.10);
-  text-decoration: none;
-  color: inherit;
-  transition: transform .15s ease, background .15s ease, border-color .15s ease;
-}
-.aff-card:hover{
-  transform: translateY(-2px);
-  background: rgba(0,0,0,0.28);
-  border-color: rgba(255,255,255,0.22);
-}
-.aff-card img{
-  height: 28px;
-  object-fit: contain;
-  filter: brightness(1.1) contrast(1.05);
-}
-.aff-card span{
-  font-size: 14px;
-  opacity: .9;
-}
+  <main>
+    <div id="toast" class="toast" hidden></div>
+    <div id="status" class="muted center">Connecting…</div>
+
+    <!-- Top strip: user + contracts -->
+    <section class="strip">
+      <div>
+        <div class="label">Your Wallet</div>
+        <div class="mono" id="walletAddress">—</div>
+      </div>
+      <div class="strip-actions">
+        <button class="chip" id="copyUser">Copy</button>
+      </div>
+      <div class="spacer"></div>
+      <div>
+        <div class="label">Sale</div>
+        <div class="mono" id="saleAddr">—</div>
+      </div>
+      <button class="chip" id="copySale">Copy</button>
+      <div>
+        <div class="label">Staking</div>
+        <div class="mono" id="stakeAddr">—</div>
+      </div>
+      <button class="chip" id="copyStake">Copy</button>
+    </section>
+
+    <div class="tabs">
+      <button id="tabBuy" class="active">Buy</button>
+      <button id="tabStake">Stake</button>
+      <span class="spacer"></span>
+    </div>
+
+    <!-- SALE STATS -->
+    <section class="card" id="stats">
+      <h3>Sale Status</h3>
+      <div class="grid2">
+        <div class="row"><div>Sale Active:</div><div id="saleActive">—</div></div>
+        <div class="row"><div>Min Buy (BNB):</div><div id="minBuyBnb">—</div></div>
+        <div class="row"><div>Tokens per 1 BNB (wei):</div><div id="rateWei">—</div></div>
+        <div class="row"><div>Available (JODA):</div><div id="available">—</div></div>
+      </div>
+    </section>
+
+    <!-- BALANCES -->
+    <section class="card" id="balances">
+      <h3>Your Balances</h3>
+      <div class="grid2">
+        <div class="row"><div>BNB:</div><div id="balBNB">—</div></div>
+        <div class="row"><div>JODA:</div><div id="balJODA">—</div></div>
+      </div>
+      <div class="small muted">Auto-refreshes every 20s</div>
+    </section>
+
+    <!-- BUY -->
+    <section id="buySection" class="card">
+      <h3>Buy JODA</h3>
+      <div class="row">
+        <div>BNB to spend</div>
+        <div>
+          <input id="buyAmount" type="number" min="0" step="0.01" placeholder="e.g. 0.10">
+          <button id="buyBtn">Buy</button>
+        </div>
+      </div>
+      <div id="buyPreview" class="small muted"></div>
+      <div id="buyResult" class="small"></div>
+    </section>
+
+    <!-- STAKE -->
+    <section id="stakeSection" class="card" style="display:none;">
+      <h3>Stake JODA</h3>
+      <div class="row">
+        <div>Amount (JODA)</div>
+        <div><input id="stakeAmount" type="number" min="0" step="1" placeholder="e.g. 10"></div>
+      </div>
+      <div class="row">
+        <div>Term</div>
+        <div>
+          <select id="stakeMonths">
+            <option value="3">3 months</option>
+            <option value="6">6 months</option>
+            <option value="12">12 months</option>
+          </select>
+          <button id="stakeBtn">Stake</button>
+        </div>
+      </div>
+
+      <h4>Your Stakes</h4>
+      <div id="stakeList" class="list small">No stakes yet.</div>
+    </section>
+  </main>
+
+  <footer>
+    <p class="muted">
+      • Min buy enforced by contract • Tokens sent after confirmation • BNB goes to treasury wallet on-chain.
+    </p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
