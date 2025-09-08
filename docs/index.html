@@ -1,81 +1,50 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>JODA • Buy & Stake (BSC Testnet)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <header>
-    <img src="JODALogo.png" alt="JODA Logo">
-    <h1>JODA • Buy & Stake (Testnet)</h1>
-  </header>
+/* ===== Affiliates / Shopping ===== */
+.affiliates{
+  max-width: 980px;
+  margin: 48px auto 80px;
+  padding: 24px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  text-align: center;
+}
+.affiliates h3{
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+.affiliates .small{ font-size: 12px; }
 
-  <div id="status" class="muted">Connecting...</div>
+.aff-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(160px,1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
 
-  <div class="tabs">
-    <button id="tabBuy" class="active">Buy</button>
-    <button id="tabStake">Stake</button>
-    <button id="connectBtn">🔗 Connect Wallet</button>
-    <p id="walletAddress"></p>
-  </div>
-
-  <!-- BUY -->
-  <section id="buySection">
-    <h2>Buy JODA</h2>
-    <p>Enter BNB amount (min $30)</p>
-    <input id="buyAmount" type="number" placeholder="BNB to spend">
-    <button id="buyBtn">Buy</button>
-    <div id="estimateOut"></div>
-  </section>
-
-  <!-- STAKE -->
-  <section id="stakeSection" style="display:none">
-    <h2>Stake JODA</h2>
-    <input id="stakeAmount" type="number" placeholder="JODA to stake">
-    <select id="stakeMonths">
-      <option value="6">6 months</option>
-      <option value="12">12 months</option>
-      <option value="24">24 months</option>
-    </select>
-    <button id="stakeBtn">Stake</button>
-    <button id="withdrawBtn">Withdraw Stake</button>
-  </section>
-
-  <!-- Toast container -->
-  <div id="toastStack" aria-live="polite" aria-atomic="true"></div>
-
-  <script src="app.js"></script>
-  <!-- ===================== Affiliates / Shopping ===================== -->
-<section class="affiliates" aria-labelledby="aff-title">
-  <h3 id="aff-title">Shop & Support JODA</h3>
-  <p class="muted small">
-    These are placeholder links for testing. Replace the URLs with your affiliate links later.
-  </p>
-
-  <div class="aff-grid">
-    <a class="aff-card" href="https://www.amazon.com/" target="_blank" rel="noopener">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" alt="Amazon">
-      <span>Amazon</span>
-    </a>
-
-    <a class="aff-card" href="https://temu.com/" target="_blank" rel="noopener">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/1/1a/Temu_logo.svg" alt="Temu">
-      <span>Temu</span>
-    </a>
-
-    <a class="aff-card" href="https://www.ebay.com/" target="_blank" rel="noopener">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/EBay_logo.svg" alt="eBay">
-      <span>eBay</span>
-    </a>
-
-    <a class="aff-card" href="https://aliexpress.com/" target="_blank" rel="noopener">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/4/4f/AliExpress_logo.svg" alt="AliExpress">
-      <span>AliExpress</span>
-    </a>
-  </div>
-</section>
-<!-- =================== /Affiliates / Shopping ====================== -->
-</body>
-</html>
+.aff-card{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 12px;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.18);
+  border: 1px solid rgba(255,255,255,0.10);
+  text-decoration: none;
+  color: inherit;
+  transition: transform .15s ease, background .15s ease, border-color .15s ease;
+}
+.aff-card:hover{
+  transform: translateY(-2px);
+  background: rgba(0,0,0,0.28);
+  border-color: rgba(255,255,255,0.22);
+}
+.aff-card img{
+  height: 28px;
+  object-fit: contain;
+  filter: brightness(1.1) contrast(1.05);
+}
+.aff-card span{
+  font-size: 14px;
+  opacity: .9;
+}
