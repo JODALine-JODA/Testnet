@@ -1,160 +1,80 @@
-/* === JODA Styles === */
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: linear-gradient(135deg, #0a192f, #1e3a8a);
-  color: #fff;
-  text-align: center;
+/* Theme */
+:root{
+  --bg:#0b1324; --panel:#0f1f3a; --ink:#eef3ff; --muted:#a9b7d0;
+  --accent:#2d6cff; --accent-2:#1b3ea8; --ok:#42d392; --warn:#fb7185;
+  --chip:#1b2a4d; --border:rgba(255,255,255,.08);
+}
+html[data-theme="light"]{
+  --bg:#f6f8ff; --panel:#ffffff; --ink:#0b1324; --muted:#52627c;
+  --accent:#2d6cff; --accent-2:#1840c7; --ok:#128a5b; --warn:#c03648;
+  --chip:#e9edff; --border:rgba(0,0,0,.08);
 }
 
-header {
-  padding: 20px;
-  background: rgba(0,0,0,0.3);
-  border-bottom: 2px solid #2563eb;
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,Arial,sans-serif}
+header{
+  display:flex;justify-content:space-between;align-items:center;gap:16px;
+  padding:12px 16px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#0d1b33,transparent)
+}
+.brand{display:flex;align-items:center;gap:12px}
+.brand img{width:56px;height:56px}
+.actions{display:flex;gap:8px;align-items:center}
+h1{font-size:18px;margin:0}
+h3{margin:8px 0 12px}
+h4{margin:12px 0 8px}
+
+main{max-width:980px;margin:0 auto;padding:16px}
+footer{padding:24px;text-align:center}
+
+button{
+  background:var(--accent);color:#fff;border:none;border-radius:10px;
+  padding:10px 16px;cursor:pointer;transition:filter .15s;box-shadow:0 2px 8px rgba(0,0,0,.15)
+}
+button:hover{filter:brightness(1.07)}
+button:disabled{filter:grayscale(.4);opacity:.7;cursor:not-allowed}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--border)}
+button.chip{background:var(--chip);border:1px solid var(--border);font-size:12px;padding:6px 10px}
+
+input,select{
+  background:var(--panel);border:1px solid var(--border);color:var(--ink);
+  border-radius:10px;padding:10px;min-width:220px
 }
 
-header img {
-  width: 100px;
-  height: auto;
+.card{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:14px;padding:16px;margin:16px 0
 }
 
-header h1 {
-  margin: 10px 0 0;
-  font-size: 1.8em;
-  color: #60a5fa;
+.strip{
+  display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto;align-items:center;
+  gap:10px;background:var(--panel);border:1px solid var(--border);
+  border-radius:12px;padding:10px 12px;margin:12px 0
 }
+.strip .label{font-size:12px;color:var(--muted)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 
-button {
-  background: #2563eb;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-size: 1em;
-  cursor: pointer;
-  margin: 10px;
-  transition: background 0.2s ease;
-}
+.tabs{display:flex;gap:8px;align-items:center;margin:8px 0}
+.tabs button.active{background:var(--accent-2)}
 
-button:hover {
-  background: #1e40af;
-}
+.grid2 .row{display:grid;grid-template-columns:240px 1fr;gap:12px;margin:6px 0}
+.row{display:grid;grid-template-columns:240px 1fr;gap:12px;margin:6px 0}
 
-section {
-  padding: 30px;
-}
+.center{text-align:center}
+.muted{color:var(--muted)}
+.small{font-size:.9em}
+.ok{color:var(--ok)}
+.warn{color:var(--warn)}
+.spacer{flex:1}
 
-input, select {
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #2563eb;
-  margin: 10px;
-}
-
-.muted { opacity: 0.6; }
-
-/* ===== Toasts ===== */
-#toastStack{
-  position: fixed;
-  right: 16px;
-  bottom: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  z-index: 9999;
+.list > .item{
+  display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;
+  padding:10px;border:1px solid var(--border);border-radius:10px;margin:8px 0;background:rgba(255,255,255,.02)
 }
 
 .toast{
-  min-width: 220px;
-  max-width: 360px;
-  background: #0b1b33;
-  color: #fff;
-  border: 1px solid #2563eb;
-  border-left-width: 6px;
-  border-radius: 10px;
-  padding: 10px 12px;
-  box-shadow: 0 10px 24px rgba(0,0,0,.35);
-  opacity: 0;
-  transform: translateY(8px);
-  transition: opacity .18s ease, transform .18s ease;
-  font-size: .95rem;
-  line-height: 1.3;
+  position:fixed;right:16px;bottom:16px;background:var(--panel);
+  border:1px solid var(--border);border-left:6px solid var(--accent);
+  padding:10px 14px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.25);z-index:10
 }
-
-.toast.show{
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.toast.success{ border-left-color: #17c964; }
-.toast.error{   border-left-color: #ef4444; }
-.toast.info{    border-left-color: #3b82f6; }
-
-.toast .title{
-  font-weight: 700;
-  margin-bottom: 2px;
-}
-.toast .msg{
-  opacity: .9;
-}
-
-.toast .close{
-  background: transparent;
-  border: none;
-  color: #999;
-  cursor: pointer;
-  float: right;
-  font-size: 1.1rem;
-}
-.toast .close:hover{ color: #fff; }
-/* ===== Affiliates / Shopping ===== */
-.affiliates{
-  max-width: 980px;
-  margin: 48px auto 80px;
-  padding: 24px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 14px;
-  text-align: center;
-}
-.affiliates h3{
-  margin: 0 0 6px;
-  font-weight: 700;
-}
-.affiliates .small{ font-size: 12px; }
-
-.aff-grid{
-  display: grid;
-  grid-template-columns: repeat(auto-fit,minmax(160px,1fr));
-  gap: 14px;
-  margin-top: 16px;
-}
-
-.aff-card{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 16px 12px;
-  border-radius: 12px;
-  background: rgba(0,0,0,0.18);
-  border: 1px solid rgba(255,255,255,0.10);
-  text-decoration: none;
-  color: inherit;
-  transition: transform .15s ease, background .15s ease, border-color .15s ease;
-}
-.aff-card:hover{
-  transform: translateY(-2px);
-  background: rgba(0,0,0,0.28);
-  border-color: rgba(255,255,255,0.22);
-}
-.aff-card img{
-  height: 28px;
-  object-fit: contain;
-  filter: brightness(1.1) contrast(1.05);
-}
-.aff-card span{
-  font-size: 14px;
-  opacity: .9;
-}
-
+.toast.ok{border-left-color:var(--ok)}
+.toast.warn{border-left-color:var(--warn)}
