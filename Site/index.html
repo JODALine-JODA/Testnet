@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JODA • Buy & Stake (Testnet)</title>
+  <!-- External CSS -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <img src="JODALogo.png" alt="JODA Logo" style="width:100px; height:auto;">
+    <h1>JODA • Buy & Stake (BSC Testnet)</h1>
+  </header>
+
+  <div id="status" class="muted">Connecting...</div>
+
+  <div class="tabs">
+    <button id="tabBuy" class="active">Buy</button>
+    <button id="tabStake">Stake</button>
+    <button id="connectBtn">🔗 Connect Wallet</button>
+    <p id="walletAddress"></p>
+  </div>
+
+  <!-- Content area -->
+  <section id="buyTab" class="card">
+    <h3>Buy JODA</h3>
+    <p>BNB to spend: <input id="bnbAmount" type="number" value="0.1" step="0.01"></p>
+    <button id="buyBtn">Buy</button>
+  </section>
+
+  <section id="stakeTab" class="card" style="display:none;">
+    <h3>Your Stakes</h3>
+    <div id="stakeList" class="small">No stakes yet.</div>
+  </section>
+
+  <!-- App logic -->
+  <script src="app.js" type="module"></script>
+</body>
+</html>
