@@ -1,279 +1,297 @@
-// ===== Config =====
+/* === Config: Testnet addresses === */
+const TOKEN_ADDRESS   = "0xB2EFA488040B036E50a18C9d2D8110AF743c5504";
 const SALE_ADDRESS    = "0x9146aEE05EbCFD30950D4E964cE256e32E1CbcfD";
 const STAKING_ADDRESS = "0xee5ef7b0140a061032613F157c8366D5a29ABB95";
-const REFRESH_MS = 20000;
+const RPC_FALLBACK    = "https://data-seed-prebsc-1-s1.binance.org:8545";
 
-// ===== Ethers setup =====
-const provider = new ethers.providers.Web3Provider(window.ethereum || {}, "any");
-let signer, sale, staking, token; // token is read from sale.token()
-let saleRateWei = null, minBuyWei = null;
+/* ABIs (loaded from JSON files in the same folder) */
+let TOKEN_ABI, SALE_ABI, STAKING_ABI;
 
-// ===== DOM =====
-const $ = (id)=>document.getElementById(id);
-const els = {
-  toast: $('toast'), status: $('status'),
-  connect: $('connectBtn'), disconnect: $('disconnectBtn'),
-  theme: $('themeBtn'),
-  tabBuy: $('tabBuy'), tabStake: $('tabStake'),
-  buySec: $('buySection'), stakeSec: $('stakeSection'),
-  buyAmount: $('buyAmount'), buyBtn: $('buyBtn'), buyPrev: $('buyPreview'), buyRes: $('buyResult'),
-  stakeAmt: $('stakeAmount'), stakeMonths: $('stakeMonths'), stakeBtn: $('stakeBtn'), stakeList: $('stakeList'),
-  saleActive: $('saleActive'), minBuyBnb: $('minBuyBnb'), rateWei: $('rateWei'), available: $('available'),
-  balBNB: $('balBNB'), balJODA: $('balJODA'),
-  wal: $('walletAddress'), saleAddr: $('saleAddr'), stAddr: $('stakeAddr'),
-  copyUser: $('copyUser'), copySale: $('copySale'), copyStake: $('copyStake'),
-};
+/* Ethers globals */
+let provider, browserProvider, signer, user, token, sale, staking;
 
-// ===== UI helpers =====
-const short = (a)=>a?`${a.slice(0,6)}…${a.slice(-4)}`:'—';
-function toast(msg, kind=''){ els.toast.textContent = msg; els.toast.className = `toast ${kind}`; els.toast.hidden=false; setTimeout(()=>els.toast.hidden=true, 4200); }
-function setStatus(msg, cls='muted'){ els.status.textContent = msg; els.status.className = `center ${cls}`; }
+/* Helpers */
+const $ = (q)=>document.querySelector(q);
+const fmt = (n, d=6)=> Number(n).toLocaleString(undefined,{maximumFractionDigits:d});
+const toEth  = (wei)=> Number(ethers.formatEther(wei));
+const toJoda = (wei)=> Number(ethers.formatUnits(wei, 18));
 
-// Theme
-(function initTheme(){
-  const saved = localStorage.getItem('joda-theme');
-  if (saved) document.documentElement.setAttribute('data-theme', saved);
-  els.theme.onclick = ()=>{
-    const cur = document.documentElement.getAttribute('data-theme')==='light' ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', cur);
-    localStorage.setItem('joda-theme', cur);
-  };
+function toast(msg, kind="ok"){
+  const el = document.createElement('div');
+  el.className = `toast ${kind}`;
+  el.textContent = msg;
+  $('#toast').appendChild(el);
+  setTimeout(()=>el.remove(), 4200);
+}
+
+function short(addr){ if(!addr) return "—"; return addr.slice(0,6)+"…"+addr.slice(-4); }
+
+/* Theme */
+(function(){
+  const saved = localStorage.getItem('joda_theme') || 'dark';
+  document.body.className = saved === 'light' ? 'theme-light' : 'theme-dark';
+  $('#themeBtn')?.addEventListener('click', ()=>{
+    const now = document.body.classList.contains('theme-dark') ? 'light' : 'dark';
+    document.body.className = now === 'light' ? 'theme-light' : 'theme-dark';
+    localStorage.setItem('joda_theme', now);
+  });
 })();
 
-// ===== ABI loader & contracts =====
-async function loadABI(p){ const r = await fetch(p); return r.json(); }
-
-async function makeContracts(signerOrProvider){
-  const saleAbi = await loadABI('JODASale.json');
-  const stakeAbi = await loadABI('JODAStaking.json');
-  sale = new ethers.Contract(SALE_ADDRESS, saleAbi, signerOrProvider);
-  staking = new ethers.Contract(STAKING_ADDRESS, stakeAbi, signerOrProvider);
-  els.saleAddr.textContent = SALE_ADDRESS; els.stAddr.textContent = STAKING_ADDRESS;
-  // resolve token address for balances
-  try{
-    const tokenAddr = await sale.token();
-    const tokenAbi = await loadABI('JODA.json');
-    token = new ethers.Contract(tokenAddr, tokenAbi, signerOrProvider);
-  }catch{}
+/* Tabs */
+function showTab(id){
+  for(const el of document.querySelectorAll('.panel')) el.style.display='none';
+  $(id).style.display = '';
+  for(const b of document.querySelectorAll('.tabs button')) b.classList.remove('active');
+  const map = { '#buyTab':'#tabBuy', '#stakeTab':'#tabStake', '#contractsTab':'#tabContracts', '#affiliateTab':'#tabAffiliate' };
+  $(map[id])?.classList.add('active');
 }
+$('#tabBuy').onclick      = ()=>showTab('#buyTab');
+$('#tabStake').onclick    = ()=>showTab('#stakeTab');
+$('#tabContracts').onclick= ()=>showTab('#contractsTab');
+$('#tabAffiliate').onclick= ()=>showTab('#affiliateTab');
 
-// ===== Wallet connect / disconnect =====
-async function getConnection(){
-  if (!window.ethereum) return { connected:false };
-  try{
-    const accs = await window.ethereum.request({ method:'eth_accounts' });
-    return { connected: !!accs[0], address: accs[0] };
-  }catch{ return { connected:false }; }
-}
+/* Copy buttons in Contracts panel */
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('button.copy');
+  if(!btn) return;
+  const target = btn.getAttribute('data-copy');
+  const val = $(target).value;
+  navigator.clipboard.writeText(val).then(()=>toast('Copied address'));
+});
 
-function applyWalletUI({connected,address}){
-  if (connected){
-    els.connect.textContent = 'Connected ✓';
-    els.connect.disabled = true;
-    els.disconnect.disabled = false;
-    els.wal.textContent = address ? address : '—';
-    setStatus('Ready (MetaMask detected)', 'ok');
-  }else{
-    els.connect.textContent = 'Connect Wallet';
-    els.connect.disabled = false;
-    els.disconnect.disabled = true;
-    els.wal.textContent = '—';
-    setStatus('Connect wallet to continue');
+/* Affiliate */
+function updateAffiliateUI(){
+  const base = location.origin + location.pathname.replace(/index\.html?$/,'');
+  const link = `${base}?ref=${user || ''}`;
+  $('#affLink').value = link;
+  $('#copyAff').onclick = ()=>navigator.clipboard.writeText(link).then(()=>toast('Affiliate link copied'));
+  const ref = new URLSearchParams(location.search).get('ref');
+  if(ref){
+    const el = $('#refNotice');
+    el.style.display = '';
+    el.textContent = `Referred by ${short(ref)}`;
   }
 }
 
-async function connect(){
-  if (!window.ethereum){ toast('MetaMask not found', 'warn'); return; }
+/* Load ABIs then init providers */
+(async function init(){
   try{
-    await window.ethereum.request({ method:'eth_requestAccounts' });
-    signer = provider.getSigner();
-    await makeContracts(signer);
-    applyWalletUI({connected:true,address:await signer.getAddress()});
+    // Load ABIs
+    const [t,s,k] = await Promise.all([
+      fetch('./JODA.json').then(r=>r.json()),
+      fetch('./JODASale.json').then(r=>r.json()),
+      fetch('./JODAStaking.json').then(r=>r.json())
+    ]);
+    TOKEN_ABI = t; SALE_ABI = s; STAKING_ABI = k;
+
+    // Provider(s)
+    if(window.ethereum){
+      browserProvider = new ethers.BrowserProvider(window.ethereum);
+      provider = browserProvider;
+      $('#mmBadge').classList.add('ok');
+      $('#mmBadge').textContent = 'MetaMask detected';
+    }else{
+      provider = new ethers.JsonRpcProvider(RPC_FALLBACK);
+      $('#mmBadge').textContent = 'MetaMask not found';
+    }
+
+    $('#netBadge').textContent = 'BSC Testnet';
+
+    // Contracts (read-only first)
+    token   = new ethers.Contract(TOKEN_ADDRESS,   TOKEN_ABI,   provider);
+    sale    = new ethers.Contract(SALE_ADDRESS,    SALE_ABI,    provider);
+    staking = new ethers.Contract(STAKING_ADDRESS, STAKING_ABI, provider);
+
+    // Fill contracts panel
+    $('#tokenAddrShort').textContent = short(TOKEN_ADDRESS);
+    $('#saleAddrShort').textContent  = short(SALE_ADDRESS);
+    $('#stakeAddrShort').textContent = short(STAKING_ADDRESS);
+    $('#tokenAddrFull').value = TOKEN_ADDRESS;
+    $('#saleAddrFull').value  = SALE_ADDRESS;
+    $('#stakeAddrFull').value = STAKING_ADDRESS;
+
+    // Buttons
+    $('#connectBtn').onclick = connect;
+    $('#disconnectBtn').onclick = disconnect;
+    $('#buyBtn').onclick = doBuy;
+    $('#approveBtn').onclick = doApprove;
+    $('#stakeBtn').onclick = doStake;
+
+    updateAffiliateUI();
     await refreshAll();
-    toast('Wallet connected','ok');
+    $('#status').textContent = 'Ready';
   }catch(e){
-    toast(e?.code===4001 ? 'Connection cancelled' : 'Connection failed','warn');
+    console.error(e);
+    $('#status').textContent = 'Error initializing app';
+    toast('Init error', 'err');
+  }
+})();
+
+/* Connect / Disconnect */
+async function connect(){
+  if(!browserProvider){ toast('MetaMask not found','err'); return; }
+  try{
+    const accounts = await browserProvider.send('eth_requestAccounts', []);
+    signer = await browserProvider.getSigner();
+    user = await signer.getAddress();
+    $('#connectBtn').style.display='none';
+    $('#disconnectBtn').style.display='';
+    $('#walletShort').textContent = short(user);
+    $('#status').innerHTML = 'Ready <span class="ok pill">MetaMask connected</span>';
+    token   = token.connect(signer);
+    sale    = sale.connect(signer);
+    staking = staking.connect(signer);
+    updateAffiliateUI();
+    await refreshAll();
+  }catch(e){
+    console.error(e);
+    toast('Wallet connection failed','err');
   }
 }
 function disconnect(){
-  signer=null; sale=null; staking=null; token=null;
-  applyWalletUI({connected:false});
-  els.balBNB.textContent='—'; els.balJODA.textContent='—';
-  els.stakeList.innerHTML='No stakes yet.'; 
-  toast('Disconnected');
+  signer = undefined; user = undefined;
+  $('#connectBtn').style.display='';
+  $('#disconnectBtn').style.display='none';
+  $('#walletShort').textContent = '—';
+  $('#status').textContent = 'Disconnected';
 }
 
-els.connect.onclick = connect;
-els.disconnect.onclick = disconnect;
-els.copyUser.onclick = async ()=>{ try{ await navigator.clipboard.writeText(els.wal.textContent); toast('Address copied','ok'); }catch{} };
-els.copySale.onclick = async ()=>{ try{ await navigator.clipboard.writeText(SALE_ADDRESS); toast('Sale address copied','ok'); }catch{} };
-els.copyStake.onclick = async ()=>{ try{ await navigator.clipboard.writeText(STAKING_ADDRESS); toast('Staking address copied','ok'); }catch{} };
-
-if (window.ethereum){
-  window.ethereum.on?.('accountsChanged', async (accs)=>{
-    if (accs.length){ signer=provider.getSigner(); await makeContracts(signer); applyWalletUI({connected:true,address:accs[0]}); await refreshAll(); }
-    else{ disconnect(); }
-  });
-  window.ethereum.on?.('chainChanged', ()=>window.location.reload());
-}
-
-// ===== Stats / balances / stakes =====
-async function refreshSaleInfo(){
-  if (!sale) return;
+/* Refresh data */
+async function refreshAll(){
   try{
-    const [active, minWei, rate, avail] = await Promise.all([
+    // Sale
+    const [active, minBuyWei, rateWei, availWei] = await Promise.all([
       sale.saleActive(), sale.minBuyWei(), sale.tokensPerBNB(), sale.availableTokens()
     ]);
-    minBuyWei=minWei; saleRateWei=rate;
-    els.saleActive.textContent = active ? 'Yes' : 'No';
-    els.minBuyBnb.textContent  = ethers.utils.formatEther(minWei);
-    els.rateWei.textContent    = rate.toString();
-    els.available.textContent  = ethers.utils.formatUnits(avail,18);
-    updateEstimate();
-  }catch(e){ console.warn(e); }
-}
+    $('#saleActive').textContent   = active ? 'Yes' : 'No';
+    $('#minBuyBnb').textContent    = fmt(toEth(minBuyWei), 6);
+    // HUMAN TOKENS (not wei)
+    $('#tokensPerBnbHuman').textContent = fmt(toJoda(rateWei), 6);
+    $('#availableTokens').textContent   = fmt(toJoda(availWei), 6);
 
-function updateEstimate(){
-  if (!saleRateWei) { els.buyPrev.textContent=''; return; }
-  const val = parseFloat(els.buyAmount.value||'0');
-  if (!val){ els.buyPrev.textContent=''; return; }
-  try{
-    const outWei = ethers.utils.parseEther(val.toString()).mul(saleRateWei);
-    els.buyPrev.textContent = `~ You’ll receive ≈ ${ethers.utils.formatUnits(outWei,18)} JODA`;
-  }catch{ els.buyPrev.textContent=''; }
-}
-els.buyAmount.addEventListener('input', updateEstimate);
-
-async function refreshBalances(){
-  if (!signer) return;
-  try{
-    const addr = await signer.getAddress();
-    const [bnb, joda] = await Promise.all([
-      provider.getBalance(addr),
-      token ? token.balanceOf(addr) : Promise.resolve(ethers.constants.Zero)
-    ]);
-    els.balBNB.textContent  = ethers.utils.formatEther(bnb);
-    els.balJODA.textContent = token ? ethers.utils.formatUnits(joda,18) : '—';
-  }catch{}
-}
-
-function fmtTimeLeft(ms){
-  if (ms<=0) return 'Ready';
-  const s=Math.floor(ms/1000), d=Math.floor(s/86400), h=Math.floor((s%86400)/3600), m=Math.floor((s%3600)/60);
-  return `${d}d ${h}h ${m}m`;
-}
-
-async function refreshStakes(){
-  if (!signer || !staking) { els.stakeList.innerHTML='No stakes yet.'; return; }
-  try{
-    const user = await signer.getAddress();
-    // We’ll read sequentially; if contract exposes `stakeCount` & `stakes(user,i)` this is fine.
-    const count = (await staking.stakeCount(user)).toNumber?.() ?? Number(await staking.stakeCount(user));
-    if (!count){ els.stakeList.innerHTML='No stakes yet.'; return; }
-
-    const container = document.createElement('div');
-    for(let i=0;i<count;i++){
-      const s = await staking.stakes(user,i);
-      const amount = ethers.utils.formatUnits(s.amount,18);
-      const end = (Number(s.startTime) + Number(s.durationDays)*86400) * 1000;
-      const li = document.createElement('div');
-      li.className='item';
-      const left = Math.max(0, end - Date.now());
-      li.innerHTML = `
-        <div>Stake #${i+1} • ${amount} JODA</div>
-        <div class="muted" data-end="${end}">${fmtTimeLeft(left)}</div>
-        <div><button class="chip withdrawBtn" data-id="${i}" ${left>0?'disabled':''}>Withdraw</button></div>
-      `;
-      container.appendChild(li);
+    // Balances (if wallet)
+    if(user){
+      const [bnbBalWei, jodaWei] = await Promise.all([
+        provider.getBalance(user), token.balanceOf(user)
+      ]);
+      $('#bnbBal').textContent  = fmt(toEth(bnbBalWei), 6);
+      $('#jodaBal').textContent = fmt(toJoda(jodaWei), 6);
+    }else{
+      $('#bnbBal').textContent  = '—';
+      $('#jodaBal').textContent = '—';
     }
-    els.stakeList.innerHTML='';
-    els.stakeList.appendChild(container);
 
-    // attach withdraw listeners
-    els.stakeList.querySelectorAll('.withdrawBtn').forEach(btn=>{
-      btn.onclick = async ()=>{
-        const id = Number(btn.dataset.id);
-        try{
-          btn.disabled=true; toast('Withdrawing…');
-          const tx = await staking.withdraw(id);
-          toast(`Pending: ${tx.hash}`);
-          await tx.wait();
-          toast('Withdraw confirmed','ok');
-          await Promise.all([refreshBalances(), refreshStakes()]);
-        }catch(e){
-          console.error(e); toast('Withdraw failed','warn'); btn.disabled=false;
-        }
-      };
-    });
-
-  }catch(e){ console.warn(e); }
-}
-
-// live countdown updater
-setInterval(()=>{
-  document.querySelectorAll('[data-end]').forEach(el=>{
-    const end = Number(el.getAttribute('data-end'));
-    const left = Math.max(0, end - Date.now());
-    el.textContent = fmtTimeLeft(left);
-    const btn = el.parentElement?.nextElementSibling?.querySelector('button.withdrawBtn');
-    if (btn && left<=0) btn.disabled=false;
-  });
-}, 1000);
-
-// ===== Actions =====
-els.buyBtn.onclick = async ()=>{
-  if (!signer || !sale){ toast('Connect wallet first','warn'); return; }
-  const val = els.buyAmount.value;
-  if (!val || Number(val)<=0){ toast('Enter BNB amount','warn'); return; }
-  try{
-    toast('Submitting buy…');
-    const tx = await sale.buy({ value: ethers.utils.parseEther(val) });
-    toast(`Pending: ${tx.hash}`);
-    await tx.wait();
-    els.buyRes.textContent = `Buy confirmed: ${tx.hash}`;
-    toast('Buy confirmed','ok');
-    await Promise.all([refreshSaleInfo(), refreshBalances()]);
-  }catch(e){ console.error(e); toast('Buy failed','warn'); }
-};
-
-els.stakeBtn.onclick = async ()=>{
-  if (!signer || !staking){ toast('Connect wallet first','warn'); return; }
-  const amt = els.stakeAmt.value, months = parseInt(els.stakeMonths.value||'3',10);
-  if (!amt || Number(amt)<=0){ toast('Enter amount to stake','warn'); return; }
-  try{
-    toast('Submitting stake…');
-    const tx = await staking.stake(ethers.utils.parseUnits(amt,18), months);
-    toast(`Pending: ${tx.hash}`);
-    await tx.wait();
-    toast('Stake confirmed','ok');
-    await Promise.all([refreshBalances(), refreshStakes()]);
-  }catch(e){ console.error(e); toast('Stake failed','warn'); }
-};
-
-// Tabs
-els.tabBuy.onclick   = ()=>{ els.tabBuy.classList.add('active'); els.tabStake.classList.remove('active'); els.buySec.style.display='block'; els.stakeSec.style.display='none'; };
-els.tabStake.onclick = ()=>{ els.tabStake.classList.add('active'); els.tabBuy.classList.remove('active'); els.buySec.style.display='none'; els.stakeSec.style.display='block'; };
-
-// ===== Master refresh =====
-async function refreshAll(){
-  await Promise.all([refreshSaleInfo(), refreshBalances(), refreshStakes()]);
-}
-
-// ===== Init =====
-(async function init(){
-  els.saleAddr.textContent = SALE_ADDRESS;
-  els.stAddr.textContent   = STAKING_ADDRESS;
-
-  try{ await makeContracts(provider); await refreshSaleInfo(); }catch{}
-
-  const s = await getConnection();
-  applyWalletUI(s);
-  if (s.connected){
-    signer = provider.getSigner();
-    await makeContracts(signer);
-    await refreshAll();
+    await refreshStakeList();
+  }catch(e){
+    console.error(e);
   }
+}
 
-  // periodic refresh
-  setInterval(()=>{ if (signer) refreshAll(); }, REFRESH_MS);
-})();
+async function refreshStakeList(){
+  const wrap = $('#stakeList');
+  wrap.innerHTML = 'Loading…';
+  try{
+    if(!user){ wrap.textContent = 'Connect wallet to view stakes.'; return; }
+    const count = await staking.stakeCount(user);
+    if(Number(count) === 0){ wrap.textContent = 'No stakes yet.'; return; }
+    const rows = [];
+    for(let i=0;i<Number(count);i++){
+      const s = await staking.stakes(user, i);
+      const amount = fmt(toJoda(s.amount),6);
+      const start  = Number(s.startTime) * 1000;
+      const days   = Number(s.durationDays);
+      const endMs  = start + days*24*3600*1000;
+      const now    = Date.now();
+      const canW   = await staking.canWithdraw(user, i);
+      const left   = Math.max(0, Math.ceil((endMs-now)/1000));
+      const leftTxt = left === 0 ? 'Ready' : secondsToDHMS(left);
+
+      rows.push(`
+        <div class="row">
+          <div>
+            <div class="tiny muted">Stake #${i}</div>
+            <div>${amount} JODA • ${days} days • ends ${new Date(endMs).toLocaleString()}</div>
+            <div class="tiny muted">Status: ${canW ? 'Withdrawable' : 'Locked'} • ${leftTxt}</div>
+          </div>
+          <div>
+            <button ${canW ? '' : 'disabled'} data-w="${i}">Withdraw</button>
+          </div>
+        </div>
+      `);
+    }
+    wrap.innerHTML = rows.join('');
+    // bind withdraws
+    wrap.querySelectorAll('button[data-w]').forEach(btn=>{
+      btn.onclick = ()=>doWithdraw(Number(btn.getAttribute('data-w')), btn);
+    });
+  }catch(e){
+    console.error(e);
+    wrap.textContent = 'Failed to load stakes.';
+  }
+}
+function secondsToDHMS(s){
+  const d=Math.floor(s/86400); s%=86400;
+  const h=Math.floor(s/3600); s%=3600;
+  const m=Math.floor(s/60); const sec=s%60;
+  return `${d}d ${h}h ${m}m ${sec}s`;
+}
+
+/* Actions */
+async function doBuy(){
+  if(!signer){ toast('Connect wallet','err'); return; }
+  try{
+    const bnb = parseFloat($('#buyBnb').value || '0');
+    if(!(bnb>0)) return toast('Enter BNB amount','err');
+    const minBuy = toEth(await sale.minBuyWei());
+    if(bnb < minBuy) return toast(`Min buy is ${minBuy} BNB`,'err');
+
+    const tx = await sale.buy({ value: ethers.parseEther(String(bnb)) });
+    toast('Buy submitted…');
+    const r = await tx.wait();
+    toast(`Buy confirmed • block ${r.blockNumber}`);
+    await refreshAll();
+  }catch(e){ console.error(e); toast(e?.info?.error?.message || e.message,'err'); }
+}
+
+async function doApprove(){
+  if(!signer){ toast('Connect wallet','err'); return; }
+  try{
+    const amt = parseFloat($('#stakeAmt').value || '0');
+    if(!(amt>0)) return toast('Enter stake amount','err');
+    const wei = ethers.parseUnits(String(amt), 18);
+    const tx = await token.approve(STAKING_ADDRESS, wei);
+    toast('Approve submitted…');
+    await tx.wait();
+    toast('Approve confirmed');
+  }catch(e){ console.error(e); toast(e?.info?.error?.message || e.message,'err'); }
+}
+async function doStake(){
+  if(!signer){ toast('Connect wallet','err'); return; }
+  try{
+    const amt = parseFloat($('#stakeAmt').value || '0');
+    const months = parseInt($('#stakeMonths').value,10);
+    if(!(amt>0)) return toast('Enter stake amount','err');
+    const wei = ethers.parseUnits(String(amt), 18);
+    const tx = await staking.stake(wei, months);
+    toast('Stake submitted…');
+    await tx.wait();
+    toast('Stake confirmed');
+    $('#stakeAmt').value = '';
+    await refreshAll();
+  }catch(e){ console.error(e); toast(e?.info?.error?.message || e.message,'err'); }
+}
+async function doWithdraw(id, btn){
+  if(!signer){ toast('Connect wallet','err'); return; }
+  try{
+    btn.disabled = true;
+    const tx = await staking.withdraw(id);
+    toast('Withdraw submitted…');
+    await tx.wait();
+    toast('Withdraw confirmed');
+    await refreshAll();
+  }catch(e){ console.error(e); toast(e?.info?.error?.message || e.message,'err'); }
+  finally{ btn.disabled = false; }
+}
+
+/* Periodic refresh */
+setInterval(()=>refreshAll().catch(console.error), 20000);
