@@ -1,158 +1,145 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>JODA • Buy & Stake (Testnet)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" href="./JODALogo.png">
+  <title>JODA • Buy & Stake (Testnet)</title>
   <link rel="stylesheet" href="./styles.css">
-  <script defer src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.min.js"></script>
-  <script defer src="./app.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.min.js"></script>
+  <script type="module" src="./app.js"></script>
 </head>
-<body class="theme-dark">
+<body>
   <header class="topbar">
     <div class="brand">
       <img src="./JODALogo.png" alt="JODA" class="logo">
-      <div class="titles">
+      <div>
         <h1>JODA</h1>
-        <p class="subtitle">Buy & Stake • BSC Testnet</p>
+        <p class="muted">Buy & Stake • BSC Testnet</p>
       </div>
     </div>
-    <div class="actions">
-      <button id="themeBtn" class="ghost" title="Toggle theme">🌓</button>
-      <button id="connectBtn" class="primary">Connect Wallet</button>
-      <button id="disconnectBtn" class="ghost" style="display:none">Disconnect</button>
+
+    <div class="wallet-controls">
+      <span id="status" class="muted">Connecting…</span>
+      <button id="connectBtn" class="btn">Connect Wallet</button>
+      <button id="disconnectBtn" class="btn outline" style="display:none;">Disconnect</button>
     </div>
   </header>
 
-  <div id="status" class="status muted">Connecting…</div>
-
-  <!-- Tabs -->
-  <nav class="tabs">
-    <button id="tabBuy" class="active">Buy</button>
-    <button id="tabStake">Stake</button>
-    <button id="tabContracts" class="ghost">Contracts</button>
-    <button id="tabAffiliate" class="ghost">Affiliate</button>
-  </nav>
-
-  <!-- Quick badges row -->
-  <section class="chips">
-    <div class="chip" id="netBadge">—</div>
-    <div class="chip ok" id="mmBadge">MetaMask</div>
-    <div class="chip" id="walletShort">—</div>
-  </section>
-
-  <!-- BUY -->
-  <section id="buyTab" class="panel">
-    <div class="grid two">
-      <div class="card">
-        <h3>Sale Status</h3>
-        <div class="row"><div>Sale Active:</div><div id="saleActive">—</div></div>
-        <div class="row"><div>Min Buy (BNB):</div><div id="minBuyBnb">—</div></div>
-        <div class="row"><div>Tokens per 1 BNB:</div><div id="tokensPerBnbHuman">—</div></div>
-        <div class="row"><div>Available (JODA):</div><div id="availableTokens">—</div></div>
+  <main class="container">
+    <!-- Addresses row -->
+    <section class="row addr-row">
+      <div class="addr">
+        <div class="label">Your wallet</div>
+        <div class="value" id="addrUser">—</div>
+        <button class="pill" data-copy="#addrUser">Copy</button>
       </div>
-      <div class="card">
-        <h3>Your Balances</h3>
-        <div class="row"><div>BNB:</div><div id="bnbBal">—</div></div>
-        <div class="row"><div>JODA:</div><div id="jodaBal">—</div></div>
-        <p class="small muted">Auto-refreshes periodically.</p>
+      <div class="addr">
+        <div class="label">Sale</div>
+        <div class="value" id="addrSale">—</div>
+        <button class="pill" data-copy="#addrSale">Copy</button>
       </div>
-    </div>
-
-    <div class="card">
-      <h3>Buy JODA</h3>
-      <div class="form">
-        <label for="buyBnb">BNB to spend</label>
-        <input id="buyBnb" inputmode="decimal" placeholder="e.g. 0.10">
-        <button id="buyBtn" class="primary">Buy</button>
+      <div class="addr">
+        <div class="label">Staking</div>
+        <div class="value" id="addrStaking">—</div>
+        <button class="pill" data-copy="#addrStaking">Copy</button>
       </div>
-      <p class="tiny muted">
-        • Min buy enforced by contract • Tokens sent after tx confirmation •
-        BNB goes to treasury wallet on-chain.
-      </p>
-    </div>
-  </section>
+    </section>
 
-  <!-- STAKE -->
-  <section id="stakeTab" class="panel" style="display:none">
-    <div class="grid two">
-      <div class="card">
-        <h3>Stake JODA</h3>
-        <div class="form">
-          <label for="stakeAmt">Amount (JODA)</label>
-          <input id="stakeAmt" inputmode="decimal" placeholder="e.g. 100">
+    <!-- Tabs -->
+    <nav class="tabs">
+      <button class="tab active" data-tab="buyTab">Buy</button>
+      <button class="tab" data-tab="stakeTab">Stake</button>
+      <button class="tab" data-tab="contractsTab">Contracts</button>
+      <button class="tab" data-tab="affiliateTab">Affiliate</button>
+    </nav>
+
+    <!-- BUY -->
+    <section id="buyTab" class="tabpane show">
+      <div class="grid two">
+        <div class="card">
+          <h3>Sale Status</h3>
+          <div class="row"><div>Sale Active:</div><div id="saleActive">—</div></div>
+          <div class="row"><div>Min Buy (BNB):</div><div id="minBuy">—</div></div>
+          <div class="row"><div>Tokens per 1 BNB:</div><div id="tknPerBnb">—</div></div>
+          <div class="row"><div>Available (JODA):</div><div id="available">—</div></div>
         </div>
-        <div class="form">
-          <label for="stakeMonths">Months</label>
+
+        <div class="card">
+          <h3>Your Balances</h3>
+          <div class="row"><div>BNB:</div><div id="balBNB">—</div></div>
+          <div class="row"><div>JODA:</div><div id="balJODA">—</div></div>
+          <div class="small muted">Auto-refresh every 20s</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Buy JODA</h3>
+        <label>BNB to spend (min shown above)</label>
+        <div class="inline">
+          <input id="bnbToSpend" type="number" min="0" step="0.01" placeholder="e.g. 0.10">
+          <button id="buyBtn" class="btn">Buy</button>
+        </div>
+        <p class="small muted">
+          • Min buy enforced by contract • Tokens arrive after confirmation • BNB goes to the treasury wallet on-chain.
+        </p>
+      </div>
+    </section>
+
+    <!-- STAKE -->
+    <section id="stakeTab" class="tabpane">
+      <div class="grid two">
+        <div class="card">
+          <h3>Stake JODA</h3>
+          <label>Amount (JODA)</label>
+          <input id="stakeAmount" type="number" min="0" step="1" placeholder="e.g. 100">
+          <label>Months</label>
           <select id="stakeMonths">
             <option value="3">3</option>
             <option value="6">6</option>
             <option value="12">12</option>
           </select>
+          <div class="inline">
+            <button id="approveBtn" class="btn outline">Approve</button>
+            <button id="stakeBtn" class="btn">Stake</button>
+          </div>
+          <div id="stakeMsg" class="small muted"></div>
         </div>
-        <div class="actions-inline">
-          <button id="approveBtn" class="ghost">Approve</button>
-          <button id="stakeBtn" class="primary">Stake</button>
-        </div>
-        <div id="stakeMsg" class="small muted"></div>
-      </div>
 
+        <div class="card">
+          <h3>Your Stakes</h3>
+          <div id="stakeList" class="small">No stakes yet.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTRACTS -->
+    <section id="contractsTab" class="tabpane">
       <div class="card">
-        <h3>Your Stakes</h3>
-        <div id="stakeList" class="small">No stakes yet.</div>
+        <h3>Contracts</h3>
+        <ul class="mono small">
+          <li>Token: <span id="cToken">—</span></li>
+          <li>Sale: <span id="cSale">—</span></li>
+          <li>Staking: <span id="cStaking">—</span></li>
+        </ul>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- CONTRACTS (collapsible content controlled via tab) -->
-  <section id="contractsTab" class="panel" style="display:none">
-    <div class="card">
-      <h3>Contracts (Testnet)</h3>
-      <div class="addrgrid">
-        <div>
-          <div class="muted tiny">Token</div>
-          <div class="addr">
-            <span id="tokenAddrShort">—</span>
-            <button class="copy" data-copy="#tokenAddrFull">Copy</button>
-          </div>
-          <input id="tokenAddrFull" class="tiny mono" readonly>
-        </div>
-        <div>
-          <div class="muted tiny">Sale</div>
-          <div class="addr">
-            <span id="saleAddrShort">—</span>
-            <button class="copy" data-copy="#saleAddrFull">Copy</button>
-          </div>
-          <input id="saleAddrFull" class="tiny mono" readonly>
-        </div>
-        <div>
-          <div class="muted tiny">Staking</div>
-          <div class="addr">
-            <span id="stakeAddrShort">—</span>
-            <button class="copy" data-copy="#stakeAddrFull">Copy</button>
-          </div>
-          <input id="stakeAddrFull" class="tiny mono" readonly>
-        </div>
-      </div>
-      <p class="tiny muted">Tip: Use the copy buttons for exact addresses.</p>
-    </div>
-  </section>
-
-  <!-- AFFILIATE -->
-  <section id="affiliateTab" class="panel" style="display:none">
-    <div class="card">
-      <h3>Affiliate</h3>
-      <p class="small">Share your unique link. When someone visits with your code, we show “Referred by …” on the site.</p>
-      <div class="form">
-        <label for="affLink">Your link</label>
+    <!-- AFFILIATE -->
+    <section id="affiliateTab" class="tabpane">
+      <div class="card">
+        <h3>Affiliate link</h3>
+        <p class="small muted">Share this link. If someone buys with your link, you get credit (off-chain tracking).</p>
         <input id="affLink" class="mono" readonly>
-        <button id="copyAff" class="ghost">Copy</button>
+        <div class="inline">
+          <button id="copyAff" class="btn">Copy</button>
+          <a id="openAff" class="btn outline" target="_blank" rel="noopener">Open</a>
+        </div>
       </div>
-      <div id="refNotice" class="pill" style="display:none"></div>
-    </div>
-  </section>
+    </section>
+  </main>
 
-  <div id="toast"></div>
+  <footer class="footer small muted">
+    <span id="toast" class="toast" style="display:none;"></span>
+  </footer>
 </body>
 </html>
