@@ -12,34 +12,30 @@ body {
   min-height: 100vh;
 }
 
-/* Navbar */
+/* Navbar container */
 .navbar {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;   /* Center everything in header */
   align-items: center;
-  padding: 12px 20px;
-  background: #0d122e;
-  border-bottom: 1px solid #1c2545;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  padding: 10px 0;
 }
 
-/* Logo container */
-.logo a {
+/* Logo section */
+.logo {
   display: flex;
-  align-items: center;    /* vertical centering */
-  gap: 10px;              /* spacing between logo and text */
-  font-size: 1.2rem;
+  align-items: center;
+  gap: 10px;
   font-weight: bold;
-  color: #00bfff;         /* cyan-blue */
-  text-decoration: none;  /* remove underline */
+  font-size: 20px;
+  color: #00c2ff;
+  text-decoration: none;
 }
 
-/* Hover effect for better UX */
-.logo a:hover {
-  color: #1ec8ff;         /* lighter blue on hover */
+.logo img {
+  border-radius: 50%;
+  height: 40px;
 }
+
 
 /* Dropdown menu */
 .menu {
