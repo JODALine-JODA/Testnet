@@ -1,172 +1,113 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>JODA • Buy & Earn Back (BSC Testnet)</title>
+  <link rel="stylesheet" href="styles.css">
 
-  <!-- Styles -->
-  <link rel="stylesheet" href="styles.css" />
-
-  <!-- ethers.js MUST be loaded before app.js -->
-  <script src="https://cdn.jsdelivr.net/npm/ethers@6.11.1/dist/ethers.min.js"></script>
-  <script defer src="app.js"></script>
+  <!-- ✅ Load ethers.js v6 -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.6.2/dist/ethers.min.js"></script>
 </head>
 <body>
-  <!-- Top bar / nav -->
-  <header class="topbar">
-    <div class="brand">
-      <img src="JODALogo.png" alt="JODA" class="logo" />
-      <div class="brand-txt">
-        <strong>JODA</strong>
-        <span>Buy & Earn Back • BSC Testnet</span>
-      </div>
+  <header class="navbar">
+    <div class="logo">
+      <img src="JODALogo.png" alt="JODA Logo" height="40">
+      <span>JODA</span>
     </div>
 
-    <nav class="nav">
-      <!-- Dropdown: Learn -->
+    <nav class="menu">
       <div class="dropdown">
-        <button class="nav-btn" data-menu-toggle="learn">Learn ▾</button>
-        <div class="menu" data-menu="learn" role="menu" aria-label="Learn">
-          <a href="#how" role="menuitem">How it works</a>
-          <a href="#tokenomics" role="menuitem">Tokenomics</a>
-          <a href="#roadmap" role="menuitem">Roadmap</a>
-          <a href="#vision" role="menuitem">Our Vision</a>
-          <a href="#faq" role="menuitem">FAQ</a>
+        <button class="dropbtn">Learn ▾</button>
+        <div class="dropdown-content">
+          <a href="#">How it works</a>
+          <a href="#">Tokenomics</a>
+          <a href="#">Roadmap</a>
+          <a href="#">Our Vision</a>
+          <a href="#">FAQ</a>
         </div>
       </div>
 
-      <!-- Dropdown: Build -->
       <div class="dropdown">
-        <button class="nav-btn" data-menu-toggle="build">Build ▾</button>
-        <div class="menu" data-menu="build" role="menu" aria-label="Build">
-          <a href="#partners" role="menuitem">Partners</a>
-          <a href="#mainnet" role="menuitem">Mainnet</a>
-          <a href="#blog" role="menuitem">Blog</a>
-          <a href="#team" role="menuitem">Team</a>
+        <button class="dropbtn">Build ▾</button>
+        <div class="dropdown-content">
+          <a href="#">Partners</a>
+          <a href="#">Blog</a>
+          <a href="#">Team</a>
+          <a href="#">Mainnet</a>
         </div>
       </div>
     </nav>
 
-    <div class="wallet-area">
-      <span id="status" class="status">Connecting…</span>
-      <span id="walletAddress" class="addr-pill"></span>
-      <button id="connectBtn" class="btn">Connect Wallet</button>
-      <button id="disconnectBtn" class="btn ghost" style="display:none;">Disconnect</button>
+    <div class="wallet-actions">
+      <span id="status" class="muted">Connecting...</span>
+      <button id="connectBtn">Connect Wallet</button>
+      <button id="disconnectBtn" style="display:none;">Disconnect</button>
     </div>
   </header>
 
-  <!-- Hero / value prop -->
-  <section class="hero">
-    <h1>Shop online → Get JODA back</h1>
-    <p>Use JODA’s shopping portal to earn a share of the value you create. It’s your spend — earn a little back in JODA.</p>
-    <div class="cta-row">
-      <a href="#earn" class="btn">Start earning</a>
-      <a href="#buy" class="btn ghost">Buy JODA</a>
-    </div>
-  </section>
+  <main>
+    <!-- ✅ Affiliate / Cashback Panel -->
+    <section class="card">
+      <h2>Shop online • Get JODA back</h2>
+      <p>Use JODA’s shopping link — every time you spend, you get rewarded back in JODA tokens.</p>
 
-  <!-- Earn section (referral-style, without saying “affiliate”) -->
-  <section id="earn" class="grid two">
-    <div class="card">
-      <h3>1 — Earn JODA when you shop</h3>
-      <p class="muted">Share your personal link or shop through it to earn JODA on supported stores.</p>
+      <div class="grid">
+        <div class="card">
+          <h3>Your personal link</h3>
+          <p>Share this link with friends or shop through it to earn JODA.</p>
+          <input id="refLink" type="text" readonly value="https://buy-joda.link/?ref=">
+          <button onclick="copyRef()">Copy</button>
+        </div>
 
-      <label>Your wallet</label>
-      <div class="copy-row">
-        <input id="refWallet" class="input mono" readonly placeholder="Connect wallet first" />
-        <button id="copyWallet" class="btn xs">Copy</button>
+        <div class="card">
+          <h3>How it works</h3>
+          <ul>
+            <li>Connect your wallet → get your unique link.</li>
+            <li>Shop online or share the link with friends.</li>
+            <li>When a purchase clears, JODA is delivered to your wallet.</li>
+          </ul>
+        </div>
       </div>
+    </section>
 
-      <label>Referral code (your wallet)</label>
-      <div class="copy-row">
-        <input id="refCode" class="input mono" readonly placeholder="—" />
-        <button id="copyCode" class="btn xs">Copy</button>
+    <!-- ✅ Buy JODA -->
+    <section class="card">
+      <h2>Buy JODA</h2>
+      <div id="saleStatus">
+        <p>Sale Active: <span id="saleActive">—</span></p>
+        <p>Min Buy (BNB): <span id="minBuy">—</span></p>
+        <p>Tokens per 1 BNB: <span id="rate">—</span></p>
+        <p>Available (JODA): <span id="available">—</span></p>
       </div>
+      <input id="buyAmount" type="number" placeholder="BNB to spend (min shown above)">
+      <button id="buyBtn">Buy</button>
+    </section>
 
-      <label>Link preview</label>
-      <div class="copy-row">
-        <input id="refLink" class="input mono" readonly placeholder="https://buy.joda.link/?ref=0x…" />
-        <button id="copyLink" class="btn xs">Copy</button>
+    <!-- ✅ Stake JODA -->
+    <section class="card">
+      <h2>Stake JODA</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>Stake</h3>
+          <input id="stakeAmount" type="number" placeholder="e.g. 100">
+          <select id="stakeMonths">
+            <option value="3">3 Months</option>
+            <option value="6">6 Months</option>
+            <option value="12">12 Months</option>
+          </select>
+          <button id="approveBtn">Approve</button>
+          <button id="stakeBtn">Stake</button>
+        </div>
+        <div class="card">
+          <h3>Your Stakes</h3>
+          <div id="yourStakes">No stakes yet.</div>
+        </div>
       </div>
+    </section>
+  </main>
 
-      <p class="small muted">We’ll disclose a partner note where required by each store.</p>
-    </div>
-
-    <div class="card">
-      <h3>How it works</h3>
-      <ul class="bullets">
-        <li>Connect wallet → get your unique tag.</li>
-        <li>Shop with your link, or share it with friends.</li>
-        <li>When a purchase clears, JODA is delivered on-chain to your wallet.</li>
-      </ul>
-      <div class="chips">
-        <span class="chip">Store A</span>
-        <span class="chip">Store B</span>
-        <span class="chip">Store C</span>
-        <span class="chip">Store D</span>
-      </div>
-      <p class="small muted">More stores coming soon.</p>
-    </div>
-  </section>
-
-  <!-- Buy / balances -->
-  <section id="buy" class="grid two">
-    <div class="card">
-      <h3>Sale Status</h3>
-      <div class="row"><span>Sale Active:</span><span id="saleActive">—</span></div>
-      <div class="row"><span>Min Buy (BNB):</span><span id="minBuy">—</span></div>
-      <div class="row"><span>Tokens per 1 BNB:</span><span id="toksPerBnb">—</span></div>
-      <div class="row"><span>Available (JODA):</span><span id="available">—</span></div>
-    </div>
-
-    <div class="card">
-      <h3>Your Balances</h3>
-      <div class="row"><span>BNB:</span><span id="balBNB">—</span></div>
-      <div class="row"><span>JODA:</span><span id="balJODA">—</span></div>
-      <p class="small muted">Auto-refreshes every 20s.</p>
-    </div>
-
-    <div class="card span2">
-      <h3>Buy JODA</h3>
-      <label>BNB to spend (min shown above)</label>
-      <div class="buyrow">
-        <input id="bnbInput" class="input" inputmode="decimal" placeholder="e.g. 0.10" />
-        <button id="buyBtn" class="btn">Buy</button>
-      </div>
-      <p class="small muted">• Min buy enforced by contract • Tokens arrive after confirmation • BNB goes to treasury wallet on-chain.</p>
-    </div>
-  </section>
-
-  <!-- Content anchors -->
-  <section id="tokenomics" class="content"><h3>Tokenomics</h3><p>Coming soon…</p></section>
-  <section id="roadmap" class="content"><h3>Roadmap</h3><p>Coming soon…</p></section>
-  <section id="vision" class="content"><h3>Our Vision</h3><p>Coming soon…</p></section>
-  <section id="faq" class="content"><h3>FAQ</h3><p>Coming soon…</p></section>
-  <section id="partners" class="content"><h3>Partners</h3><p>Coming soon…</p></section>
-  <section id="mainnet" class="content"><h3>Mainnet</h3><p>Coming soon…</p></section>
-  <section id="blog" class="content"><h3>Blog</h3><p>Coming soon…</p></section>
-  <section id="team" class="content"><h3>Team</h3><p>Coming soon…</p></section>
-
-  <!-- Small helper for dropdowns -->
-  <script>
-    (function () {
-      function closeAll() {
-        document.querySelectorAll('.menu.open').forEach(m => m.classList.remove('open'));
-      }
-      document.querySelectorAll('[data-menu-toggle]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const key = btn.getAttribute('data-menu-toggle');
-          const menu = document.querySelector(`[data-menu="${key}"]`);
-          const isOpen = menu.classList.contains('open');
-          closeAll();
-          if (!isOpen) menu.classList.add('open');
-        });
-      });
-      document.addEventListener('click', closeAll);
-      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
-    }());
-  </script>
+  <!-- ✅ Link to app.js -->
+  <script src="app.js"></script>
 </body>
 </html>
