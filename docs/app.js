@@ -1,3 +1,4 @@
+
 /* ================================
    JODA dApp – Buy & Stake (BSC Testnet)
    Full app.js – 2025-09-10
