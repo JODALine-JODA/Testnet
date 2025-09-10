@@ -1,10 +1,18 @@
-/* app.js — JODA site core
+/* app.js – JODA site core
  * Works with ethers v6 (loaded in index.html via CDN)
  * Read-only fallback via public BSC testnet RPC when wallet not connected.
  */
 
+// ====== Fix: ensure ethers.js is loaded ======
+if (typeof ethers === "undefined") {
+  const statusEl = document.getElementById("status");
+  if (statusEl) statusEl.innerText = "Error: ethers.js not loaded.";
+  console.error("Ethers.js not found. Check the CDN <script> in index.html.");
+  throw new Error("Ethers.js not loaded");
+}
+
+// ---------------- Config ----------------
 (() => {
-  // ---------- Config ----------
   const BSC_TESTNET_ID = 97;
   const BSC_TESTNET_PARAMS = {
     chainId: '0x61',
@@ -13,7 +21,7 @@
     rpcUrls: ['https://data-seed-prebsc-1-s1.binance.org:8545/'],
     blockExplorerUrls: ['https://testnet.bscscan.com/'],
   };
-
+  
   // Your deployed contracts (testnet)
   const ADDR = {
     TOKEN:   '0xB2EFA488040B036E50a18C9d2D8110AF743c5504',
