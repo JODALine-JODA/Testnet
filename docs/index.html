@@ -1,145 +1,240 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>JODA • Buy & Stake (Testnet)</title>
-  <link rel="stylesheet" href="./styles.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="JODALogo.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <!-- ethers v6 -->
   <script type="module" src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.min.js"></script>
-  <script type="module" src="./app.js"></script>
 </head>
+
 <body>
+  <!-- Drawer (left menu) -->
+  <aside id="drawer" class="drawer">
+    <div class="drawer-header">
+      <img src="JODALogo.png" alt="JODA" />
+      <h3>JODA</h3>
+    </div>
+    <nav>
+      <a href="#hero">Home</a>
+      <a href="#affiliate">Affiliate</a>
+      <a href="#buy">Buy</a>
+      <a href="#stake">Stake</a>
+      <a href="#contracts">Contracts</a>
+      <hr />
+      <a href="#tokenomics">Tokenomics</a>
+      <a href="#roadmap">Roadmap</a>
+      <a href="#vision">Vision</a>
+      <a href="#partners">Partners</a>
+      <a href="#faq">FAQ</a>
+      <a href="#blog">Blog</a>
+      <a href="#team">Team</a>
+      <a href="#mainnet">Mainnet</a>
+    </nav>
+  </aside>
+
+  <!-- Top bar -->
   <header class="topbar">
+    <button id="menuBtn" class="iconbtn" aria-label="Menu">☰</button>
     <div class="brand">
-      <img src="./JODALogo.png" alt="JODA" class="logo">
+      <img src="JODALogo.png" alt="JODA" />
       <div>
-        <h1>JODA</h1>
-        <p class="muted">Buy & Stake • BSC Testnet</p>
+        <strong>JODA</strong>
+        <small>Buy & Stake • BSC Testnet</small>
       </div>
     </div>
-
-    <div class="wallet-controls">
-      <span id="status" class="muted">Connecting…</span>
+    <div class="top-actions">
+      <span id="status" class="pill muted">Connecting…</span>
       <button id="connectBtn" class="btn">Connect Wallet</button>
-      <button id="disconnectBtn" class="btn outline" style="display:none;">Disconnect</button>
+      <button id="disconnectBtn" class="btn ghost" style="display:none">Disconnect</button>
+      <button id="themeBtn" class="iconbtn" aria-label="Theme">☾</button>
     </div>
   </header>
 
-  <main class="container">
-    <!-- Addresses row -->
-    <section class="row addr-row">
-      <div class="addr">
-        <div class="label">Your wallet</div>
-        <div class="value" id="addrUser">—</div>
-        <button class="pill" data-copy="#addrUser">Copy</button>
+  <!-- HERO: “Shop → Get JODA back” -->
+  <section id="hero" class="hero">
+    <div class="hero-inner">
+      <h1>Shop through our app, <span class="accent">get your money back</span> in JODA.</h1>
+      <p class="muted">
+        We’re building the bridge between your everyday online purchases and crypto rewards.
+        Make a purchase via our affiliate links → earn JODA automatically.
+      </p>
+      <div class="hero-cta">
+        <a href="#affiliate" class="btn">Start Earning JODA</a>
+        <a href="#learn" class="btn ghost">Find out more</a>
       </div>
-      <div class="addr">
-        <div class="label">Sale</div>
-        <div class="value" id="addrSale">—</div>
-        <button class="pill" data-copy="#addrSale">Copy</button>
-      </div>
-      <div class="addr">
-        <div class="label">Staking</div>
-        <div class="value" id="addrStaking">—</div>
-        <button class="pill" data-copy="#addrStaking">Copy</button>
-      </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Tabs -->
-    <nav class="tabs">
-      <button class="tab active" data-tab="buyTab">Buy</button>
-      <button class="tab" data-tab="stakeTab">Stake</button>
-      <button class="tab" data-tab="contractsTab">Contracts</button>
-      <button class="tab" data-tab="affiliateTab">Affiliate</button>
-    </nav>
+  <!-- ADDRESS BAR -->
+  <section class="addrbar">
+    <div class="addr">
+      <small>Your wallet</small>
+      <code id="userAddr">—</code>
+      <button class="pill" onclick="copyText('userAddr')">Copy</button>
+    </div>
+    <div class="addr">
+      <small>Staking</small>
+      <code id="stakingAddr">—</code>
+      <button class="pill" onclick="copyText('stakingAddr')">Copy</button>
+    </div>
+    <div class="addr">
+      <small>Sale</small>
+      <code id="saleAddr">—</code>
+      <button class="pill" onclick="copyText('saleAddr')">Copy</button>
+    </div>
+  </section>
 
-    <!-- BUY -->
-    <section id="buyTab" class="tabpane show">
-      <div class="grid two">
-        <div class="card">
-          <h3>Sale Status</h3>
-          <div class="row"><div>Sale Active:</div><div id="saleActive">—</div></div>
-          <div class="row"><div>Min Buy (BNB):</div><div id="minBuy">—</div></div>
-          <div class="row"><div>Tokens per 1 BNB:</div><div id="tknPerBnb">—</div></div>
-          <div class="row"><div>Available (JODA):</div><div id="available">—</div></div>
+  <!-- TAB BAR -->
+  <section class="tabs">
+    <button id="tabBuy" class="tab active">Buy</button>
+    <button id="tabStake" class="tab">Stake</button>
+    <button id="tabContracts" class="tab">Contracts</button>
+    <button id="tabAffiliate" class="tab">Affiliate</button>
+  </section>
+
+  <!-- AFFILIATE (front and center) -->
+  <section id="affiliate" class="grid two">
+    <div class="card">
+      <h3>Earn JODA on your purchases</h3>
+      <p class="muted">
+        Use your personal referral link when shopping at supported stores. A portion of your
+        spend is returned to you as <strong>JODA</strong>. Share your link to earn even more.
+      </p>
+
+      <div class="row">
+        <div>
+          <label>Your referral link</label>
+          <input id="refLink" class="mono" readonly />
         </div>
-
-        <div class="card">
-          <h3>Your Balances</h3>
-          <div class="row"><div>BNB:</div><div id="balBNB">—</div></div>
-          <div class="row"><div>JODA:</div><div id="balJODA">—</div></div>
-          <div class="small muted">Auto-refresh every 20s</div>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3>Buy JODA</h3>
-        <label>BNB to spend (min shown above)</label>
-        <div class="inline">
-          <input id="bnbToSpend" type="number" min="0" step="0.01" placeholder="e.g. 0.10">
-          <button id="buyBtn" class="btn">Buy</button>
-        </div>
-        <p class="small muted">
-          • Min buy enforced by contract • Tokens arrive after confirmation • BNB goes to the treasury wallet on-chain.
-        </p>
-      </div>
-    </section>
-
-    <!-- STAKE -->
-    <section id="stakeTab" class="tabpane">
-      <div class="grid two">
-        <div class="card">
-          <h3>Stake JODA</h3>
-          <label>Amount (JODA)</label>
-          <input id="stakeAmount" type="number" min="0" step="1" placeholder="e.g. 100">
-          <label>Months</label>
-          <select id="stakeMonths">
-            <option value="3">3</option>
-            <option value="6">6</option>
-            <option value="12">12</option>
-          </select>
-          <div class="inline">
-            <button id="approveBtn" class="btn outline">Approve</button>
-            <button id="stakeBtn" class="btn">Stake</button>
-          </div>
-          <div id="stakeMsg" class="small muted"></div>
-        </div>
-
-        <div class="card">
-          <h3>Your Stakes</h3>
-          <div id="stakeList" class="small">No stakes yet.</div>
+        <div class="right">
+          <button class="btn" id="copyRefBtn">Copy</button>
         </div>
       </div>
-    </section>
 
-    <!-- CONTRACTS -->
-    <section id="contractsTab" class="tabpane">
-      <div class="card">
-        <h3>Contracts</h3>
-        <ul class="mono small">
-          <li>Token: <span id="cToken">—</span></li>
-          <li>Sale: <span id="cSale">—</span></li>
-          <li>Staking: <span id="cStaking">—</span></li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- AFFILIATE -->
-    <section id="affiliateTab" class="tabpane">
-      <div class="card">
-        <h3>Affiliate link</h3>
-        <p class="small muted">Share this link. If someone buys with your link, you get credit (off-chain tracking).</p>
-        <input id="affLink" class="mono" readonly>
-        <div class="inline">
-          <button id="copyAff" class="btn">Copy</button>
-          <a id="openAff" class="btn outline" target="_blank" rel="noopener">Open</a>
+      <div class="row">
+        <div>
+          <label>Referral code (your wallet)</label>
+          <input id="refCode" class="mono" readonly />
+          <small class="muted">Anyone visiting with <code>?ref=YOUR_ADDRESS</code> is credited.</small>
         </div>
       </div>
-    </section>
-  </main>
 
-  <footer class="footer small muted">
-    <span id="toast" class="toast" style="display:none;"></span>
-  </footer>
+      <div class="row">
+        <div>
+          <label>Paste a store link</label>
+          <input id="storeUrl" placeholder="https://shop.example.com/product/123" />
+          <small class="muted">We’ll decorate it when we support that merchant.</small>
+        </div>
+        <div class="right">
+          <button class="btn ghost" id="decorateBtn">Decorate</button>
+        </div>
+      </div>
+
+      <div id="refMsg" class="small muted"></div>
+    </div>
+
+    <div class="card">
+      <h3>How it works</h3>
+      <ul class="bullets">
+        <li>Connect wallet → get your <em>ref link</em>.</li>
+        <li>Shop via your link or share it with friends.</li>
+        <li>When a purchase clears, JODA is credited to your wallet.</li>
+      </ul>
+      <a id="learn" class="btn ghost" href="#faq">FAQ</a>
+    </div>
+  </section>
+
+  <!-- BUY -->
+  <section id="buy" class="grid one">
+    <div class="card">
+      <h3>Sale Status</h3>
+      <div class="row">
+        <div>Sale Active:</div><div id="saleActive" class="ok">—</div>
+      </div>
+      <div class="row">
+        <div>Min Buy (BNB):</div><div id="minBuyBnb">—</div>
+      </div>
+      <div class="row">
+        <div>Tokens per 1 BNB:</div><div id="tokensPerBnb">—</div>
+      </div>
+      <div class="row">
+        <div>Available (JODA):</div><div id="available">—</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Your Balances</h3>
+      <div class="row"><div>BNB</div><div id="bnbBal">—</div></div>
+      <div class="row"><div>JODA</div><div id="jodaBal">—</div></div>
+      <small class="muted">Auto-refreshes every 20s.</small>
+    </div>
+
+    <div class="card">
+      <h3>Buy JODA</h3>
+      <label>BNB to spend (min shown above)</label>
+      <div class="row">
+        <input id="buyBnb" placeholder="e.g. 0.10" />
+        <button id="buyBtn" class="btn">Buy</button>
+      </div>
+      <small class="muted">
+        • Min buy enforced by contract • Tokens arrive after confirmation • BNB goes to treasury wallet on-chain.
+      </small>
+      <div id="buyMsg" class="small muted"></div>
+    </div>
+  </section>
+
+  <!-- STAKE -->
+  <section id="stake" class="grid two">
+    <div class="card">
+      <h3>Stake JODA</h3>
+      <label>Amount (JODA)</label>
+      <input id="stakeAmt" placeholder="e.g. 100" />
+      <label>Months</label>
+      <select id="stakeMonths">
+        <option value="3">3</option>
+        <option value="6">6</option>
+        <option value="12">12</option>
+      </select>
+      <div class="row">
+        <button id="approveBtn" class="btn ghost">Approve</button>
+        <button id="stakeBtn" class="btn">Stake</button>
+      </div>
+      <div id="stakeMsg" class="small muted"></div>
+    </div>
+
+    <div class="card">
+      <h3>Your Stakes</h3>
+      <div id="stakeList" class="small muted">No stakes yet.</div>
+    </div>
+  </section>
+
+  <!-- CONTRACTS -->
+  <section id="contracts" class="grid one">
+    <div class="card">
+      <h3>Contracts</h3>
+      <div class="row"><div>Token</div><div id="tokenAddr">—</div></div>
+      <div class="row"><div>Sale</div><div id="saleAddr2">—</div></div>
+      <div class="row"><div>Staking</div><div id="stakingAddr2">—</div></div>
+    </div>
+  </section>
+
+  <!-- Footer placeholders for future content -->
+  <section id="tokenomics" class="placeholder"><h3>Tokenomics</h3></section>
+  <section id="roadmap"   class="placeholder"><h3>Roadmap</h3></section>
+  <section id="vision"    class="placeholder"><h3>Our Vision</h3></section>
+  <section id="partners"  class="placeholder"><h3>Partners</h3></section>
+  <section id="faq"       class="placeholder"><h3>FAQ</h3></section>
+  <section id="blog"      class="placeholder"><h3>Blog</h3></section>
+  <section id="team"      class="placeholder"><h3>Team</h3></section>
+  <section id="mainnet"   class="placeholder"><h3>Mainnet</h3></section>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- App -->
+  <script type="module" src="app.js"></script>
 </body>
 </html>
