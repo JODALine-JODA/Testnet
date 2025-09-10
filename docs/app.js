@@ -1,108 +1,233 @@
-// app.js
+/* app.js — JODA site core
+ * Works with ethers v6 (loaded in index.html via CDN)
+ * Read-only fallback via public BSC testnet RPC when wallet not connected.
+ */
 
-let provider;
-let signer;
-let userAddress = null;
+(() => {
+  // ---------- Config ----------
+  const BSC_TESTNET_ID = 97;
+  const BSC_TESTNET_PARAMS = {
+    chainId: '0x61',
+    chainName: 'BSC Testnet',
+    nativeCurrency: { name: 'BNB', symbol: 'tBNB', decimals: 18 },
+    rpcUrls: ['https://data-seed-prebsc-1-s1.binance.org:8545/'],
+    blockExplorerUrls: ['https://testnet.bscscan.com/'],
+  };
 
-// Contract ABIs + addresses (adjust if needed)
-const JODA_ABI_URL = "JODA.json";
-const SALE_ABI_URL = "JODASale.json";
-const STAKING_ABI_URL = "JODAStaking.json";
+  // Your deployed contracts (testnet)
+  const ADDR = {
+    TOKEN:   '0xB2EFA488040B036E50a18C9d2D8110AF743c5504',
+    SALE:    '0x9146aEE05EbCFD30950D4E964cE256e32E1CbcfD',
+    STAKING: '0xEe5Ef7b0140a061032613F157c8366D5a29ABB95',
+  };
 
-let jodaContract, saleContract, stakingContract;
+  // ---------- State ----------
+  let provider = null;     // ethers.Provider (BrowserProvider or JsonRpcProvider)
+  let signer   = null;     // ethers.Signer (when connected)
+  let token, sale, staking; // ethers.Contract instances (bound to provider or signer)
 
-// Contract addresses (replace with yours)
-const JODA_ADDRESS = "0x...";       // Token
-const SALE_ADDRESS = "0x...";       // Sale
-const STAKING_ADDRESS = "0x...";    // Staking
+  // ---------- DOM helpers ----------
+  const $ = (id) => document.getElementById(id);
+  const statusEl = $('status');
+  const connectBtn = $('connectBtn');
+  const disconnectBtn = $('disconnectBtn');
+  const walletAddressEl = $('walletAddress');
 
-// Elements
-const statusEl = document.getElementById("status");
-const connectBtn = document.getElementById("connectBtn");
-const disconnectBtn = document.getElementById("disconnectBtn");
-const walletAddressEl = document.getElementById("walletAddress");
+  const setStatus = (msg, tone='') => {
+    statusEl.textContent = msg;
+    statusEl.classList.remove('ok','warn','danger');
+    if (tone) statusEl.classList.add(tone);
+  };
 
-// -------------------- INIT --------------------
-async function init() {
-  try {
-    if (typeof window.ethereum === "undefined") {
-      statusEl.textContent = "MetaMask not detected ❌";
-      return;
-    }
+  const short = (addr) => addr ? `${addr.slice(0,6)}…${addr.slice(-4)}` : '';
 
-    // Load ethers.js provider
-    provider = new ethers.BrowserProvider(window.ethereum);
-
-    // Read-only state
-    signer = null;
-    userAddress = null;
-
-    statusEl.textContent = "Ready (read-only)";
-    connectBtn.style.display = "inline-block";
-    disconnectBtn.style.display = "none";
-
-    // Preload contract ABIs
-    const [jodaABI, saleABI, stakingABI] = await Promise.all([
-      fetch(JODA_ABI_URL).then(r => r.json()),
-      fetch(SALE_ABI_URL).then(r => r.json()),
-      fetch(STAKING_ABI_URL).then(r => r.json())
+  // ---------- ABI loading ----------
+  async function loadABIs() {
+    const [tokenAbi, saleAbi, stakingAbi] = await Promise.all([
+      fetch('JODA.json').then(r=>r.json()),
+      fetch('JODASale.json').then(r=>r.json()),
+      fetch('JODAStaking.json').then(r=>r.json()),
     ]);
-
-    jodaContract = new ethers.Contract(JODA_ADDRESS, jodaABI, provider);
-    saleContract = new ethers.Contract(SALE_ADDRESS, saleABI, provider);
-    stakingContract = new ethers.Contract(STAKING_ADDRESS, stakingABI, provider);
-
-  } catch (err) {
-    console.error("Init error:", err);
-    statusEl.textContent = "Error initializing app (check console)";
+    return { tokenAbi, saleAbi, stakingAbi };
   }
-}
 
-// -------------------- CONNECT --------------------
-async function connectWallet() {
-  try {
-    if (!provider) {
-      statusEl.textContent = "No provider";
+  // ---------- Provider setup ----------
+  async function makeContracts(boundTo) {
+    const { tokenAbi, saleAbi, stakingAbi } = await loadABIs();
+    token   = new ethers.Contract(ADDR.TOKEN,   tokenAbi,   boundTo);
+    sale    = new ethers.Contract(ADDR.SALE,    saleAbi,    boundTo);
+    staking = new ethers.Contract(ADDR.STAKING, stakingAbi, boundTo);
+  }
+
+  async function setupReadOnly() {
+    // Public RPC read-only
+    provider = new ethers.JsonRpcProvider(BSC_TESTNET_PARAMS.rpcUrls[0]);
+    signer = null;
+    await makeContracts(provider);
+    setStatus('Ready (read-only RPC)', 'ok');
+    updateUIConnected(false);
+    refreshAll().catch(console.error);
+  }
+
+  function updateUIConnected(isConnected, addr='') {
+    if (isConnected) {
+      connectBtn.textContent = 'Connected';
+      connectBtn.disabled = true;
+      disconnectBtn?.classList.remove('hidden');
+      walletAddressEl && (walletAddressEl.textContent = short(addr));
+    } else {
+      connectBtn.textContent = 'Connect Wallet';
+      connectBtn.disabled = false;
+      disconnectBtn?.classList.add('hidden');
+      walletAddressEl && (walletAddressEl.textContent = '');
+    }
+  }
+
+  async function ensureBscTestnet(eth) {
+    const chainIdHex = await eth.request({ method: 'eth_chainId' });
+    if (chainIdHex === BSC_TESTNET_PARAMS.chainId) return true;
+
+    // try switch
+    try {
+      await eth.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: BSC_TESTNET_PARAMS.chainId }],
+      });
+      return true;
+    } catch (e) {
+      // chain not added → try to add
+      if (e.code === 4902 || String(e.message).includes('Unrecognized chain ID')) {
+        await eth.request({
+          method: 'wallet_addEthereumChain',
+          params: [BSC_TESTNET_PARAMS],
+        });
+        return true;
+      }
+      throw e;
+    }
+  }
+
+  // ---------- Connect / Disconnect ----------
+  async function connect() {
+    if (!window.ethereum) {
+      setStatus('No provider found — install MetaMask', 'danger');
+      window.open('https://metamask.io/download/', '_blank');
+      return;
+    }
+    try {
+      setStatus('Requesting wallet permission…');
+      await ensureBscTestnet(window.ethereum);
+
+      provider = new ethers.BrowserProvider(window.ethereum, 'any'); // 'any' to get chain events
+      const accounts = await provider.send('eth_requestAccounts', []);
+      signer = await provider.getSigner();
+      await makeContracts(signer);
+
+      const addr = await signer.getAddress();
+      setStatus('Connected to MetaMask', 'ok');
+      updateUIConnected(true, addr);
+
+      // listeners
+      window.ethereum.on('accountsChanged', handleAccountsChanged);
+      window.ethereum.on('chainChanged', handleChainChanged);
+
+      await refreshAll();
+    } catch (e) {
+      console.error(e);
+      setStatus(e?.message ?? 'Connection failed', 'danger');
+      updateUIConnected(false);
+    }
+  }
+
+  async function disconnect() {
+    // There’s no programmatic “disconnect” for MetaMask; we just drop signer and revert to read-only.
+    window.ethereum?.removeListener('accountsChanged', handleAccountsChanged);
+    window.ethereum?.removeListener('chainChanged', handleChainChanged);
+    await setupReadOnly();
+  }
+
+  async function handleAccountsChanged(accs) {
+    if (!accs || accs.length === 0) {
+      await disconnect();
+      return;
+    }
+    // Re-bind signer to the first account
+    signer = await provider.getSigner();
+    await makeContracts(signer);
+    const addr = await signer.getAddress();
+    setStatus('Account changed', 'ok');
+    updateUIConnected(true, addr);
+    await refreshAll();
+  }
+
+  async function handleChainChanged(_cid) {
+    // Re-init to enforce testnet
+    await connect();
+  }
+
+  // ---------- Reads (example refreshers you already had) ----------
+  async function refreshAll() {
+    // Example UI IDs you may already have:
+    // saleActive, minBuy, tokensPerBNB, availableTokens, bnbBal, jodaBal
+    try {
+      const [active, minBuyWei, rateWei, avail] = await Promise.all([
+        sale.saleActive(),
+        sale.minBuyWei(),
+        sale.tokensPerBNB(),
+        sale.availableTokens(),
+      ]);
+
+      const bnbBal = await provider.getBalance(ADDR.SALE);
+      const userAddr = signer ? await signer.getAddress() : null;
+      const jodaBal = userAddr ? await token.balanceOf(userAddr) : 0n;
+
+      // Update UI
+      const toEth = (w) => Number(ethers.formatEther(w));
+      $('saleActive') && ($('saleActive').textContent = active ? 'Yes' : 'No');
+      $('minBuy') && ($('minBuy').textContent = toEth(minBuyWei).toFixed(2));
+      $('rate') && ($('rate').textContent = Number(ethers.formatUnits(rateWei, 18)).toLocaleString());
+      $('available') && ($('available').textContent = Number(ethers.formatUnits(avail, 18)).toLocaleString());
+      $('bnbBal') && ($('bnbBal').textContent = toEth(bnbBal).toFixed(6));
+      $('jodaBal') && ($('jodaBal').textContent = userAddr ? Number(ethers.formatUnits(jodaBal, 18)).toLocaleString() : '—');
+    } catch (e) {
+      console.error(e);
+      setStatus('Read failed — check RPC or ABIs', 'warn');
+    }
+  }
+
+  // ---------- Wire buttons ----------
+  connectBtn?.addEventListener('click', connect);
+  disconnectBtn?.addEventListener('click', disconnect);
+
+  // ---------- Bootstrap ----------
+  async function init() {
+    // No provider? show link & go read-only.
+    if (!window.ethereum) {
+      setStatus('No provider found — install MetaMask', 'warn');
+      updateUIConnected(false);
+      await setupReadOnly();
       return;
     }
 
-    signer = await provider.getSigner();
-    userAddress = await signer.getAddress();
+    // Provider exists → build read-only first (fast), then try silent bind
+    setStatus('MetaMask detected — read-only until connected', 'ok');
+    provider = new ethers.BrowserProvider(window.ethereum, 'any');
+    await makeContracts(provider);
+    updateUIConnected(false);
+    await refreshAll();
 
-    statusEl.textContent = "✅ Connected";
-    walletAddressEl.textContent = userAddress;
-
-    connectBtn.style.display = "none";
-    disconnectBtn.style.display = "inline-block";
-
-    // Reconnect contracts with signer
-    jodaContract = jodaContract.connect(signer);
-    saleContract = saleContract.connect(signer);
-    stakingContract = stakingContract.connect(signer);
-
-  } catch (err) {
-    console.error("Wallet connection failed:", err);
-    statusEl.textContent = "❌ Connection failed";
+    // Try to detect already-connected account (some wallets expose selectedAddress)
+    try {
+      const accs = await provider.send('eth_accounts', []);
+      if (accs && accs.length) {
+        await connect(); // upgrades to signer-bound + installs listeners
+      }
+    } catch (e) {
+      // ignore
+      console.debug('Silent connect skipped:', e?.message);
+    }
   }
-}
 
-// -------------------- DISCONNECT --------------------
-function disconnectWallet() {
-  signer = null;
-  userAddress = null;
-  walletAddressEl.textContent = "";
-
-  statusEl.textContent = "Disconnected";
-  connectBtn.style.display = "inline-block";
-  disconnectBtn.style.display = "none";
-
-  // Reset to read-only provider
-  jodaContract = jodaContract.connect(provider);
-  saleContract = saleContract.connect(provider);
-  stakingContract = stakingContract.connect(provider);
-}
-
-// -------------------- EVENTS --------------------
-window.addEventListener("load", init);
-connectBtn?.addEventListener("click", connectWallet);
-disconnectBtn?.addEventListener("click", disconnectWallet);
+  // kick off
+  init();
+})();
