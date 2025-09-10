@@ -1,7 +1,6 @@
-
 /* ================================
    JODA dApp – Buy & Stake (BSC Testnet)
-   Full app.js – 2025-09-10
+   app.js with ABI fallbacks + clearer status
    ================================ */
 
 /* ---------- Helpers ---------- */
@@ -12,30 +11,26 @@ const toWei = (eth) => ethers.parseEther(String(eth ?? 0));
 const toUnits = (wei, decimals = 18) => Number(ethers.formatUnits(wei, decimals));
 const fromUnits = (n, decimals = 18) => ethers.parseUnits(String(n ?? 0), decimals);
 
-/* ---------- UI Elements (optional) ---------- */
-const statusEl       = $("status");            // text: Ready / Connected / …
-const connectBtn     = $("connectBtn");        // button
-const disconnectBtn  = $("disconnectBtn");     // button (hidden by default)
+/* ---------- UI Elements ---------- */
+const statusEl       = $("status");
+const connectBtn     = $("connectBtn");
+const disconnectBtn  = $("disconnectBtn");
 
-const walletAddress  = $("walletAddress");     // input/display for user wallet
-const yourWallet     = $("yourWallet");        // (duplicate display, optional)
+const walletAddress  = $("walletAddress");
+const yourWallet     = $("yourWallet");
 
-// Sale stats
 const saleActiveEl   = $("saleActive");
-const minBuyEl       = $("minBuy");            // BNB (not wei)
-const rateEl         = $("tokensPerBNB");      // tokens (not wei)
-const availEl        = $("available");         // JODA (18dp)
+const minBuyEl       = $("minBuy");
+const rateEl         = $("tokensPerBNB");
+const availEl        = $("available");
 
-// Balances
 const bnbBalEl       = $("bnbBalance");
 const jodaBalEl      = $("jodaBalance");
 
-// Buy form
 const buyBnbInput    = $("buyBnb");
 const buyBtn         = $("buyBtn");
 const buyMsg         = $("buyMsg");
 
-// Headers / addresses (optional info bars)
 const headerWallet   = $("hdrWallet");
 const headerSale     = $("hdrSale");
 const headerStaking  = $("hdrStaking");
@@ -46,62 +41,39 @@ const SALE_ADDRESS    = "0x9146aEE05EbCFD30950D4E964cE256e32E1CbcfD";
 const STAKING_ADDRESS = "0xee5ef7b0140a061032613F157c8366D5a29ABB95";
 
 /* ---------- State ---------- */
-let provider;    // ethers.Provider (BrowserProvider or JsonRpcProvider)
-let signer;      // ethers.Signer (when connected)
-let user;        // connected address (string) or undefined
+let provider;
+let signer;
+let user;
 
-let token;       // ethers.Contract (IERC20)
-let sale;        // ethers.Contract (JODASale)
-let staking;     // ethers.Contract (JODAStaking)
+let token;
+let sale;
+let staking;
 
-/* ---------- Load ABIs from JSON files ---------- */
-async function loadAbi(path) {
-  const res = await fetch(path, { cache: "no-cache" });
-  if (!res.ok) throw new Error(`Failed to fetch ${path}`);
-  const json = await res.json();
-  return Array.isArray(json) ? json : (json.abi ?? []);
-}
+/* ---------- Minimal fallback ABIs (only the functions we use) ---------- */
+const FALLBACK_TOKEN_ABI = [
+  // balanceOf(address) -> uint256
+  {"constant":true,"inputs":[{"name":"a","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+  // decimals() -> uint8 (not used in math, but useful)
+  {"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"stateMutability":"view","type":"function"}
+];
 
-/* ---------- Build contracts for a given provider/signer ---------- */
-async function makeContracts(currentProviderOrSigner) {
-  const TOKEN_ABI   = await loadAbi("JODA.json");
-  const SALE_ABI    = await loadAbi("JODASale.json");
-  const STAKING_ABI = await loadAbi("JODAStaking.json");
+const FALLBACK_SALE_ABI = [
+  // saleActive() -> bool
+  {"constant":true,"inputs":[],"name":"saleActive","outputs":[{"name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+  // minBuyWei() -> uint256
+  {"constant":true,"inputs":[],"name":"minBuyWei","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+  // tokensPerBNB() -> uint256 (1e18 tokens per 1 BNB)
+  {"constant":true,"inputs":[],"name":"tokensPerBNB","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+  // availableTokens() -> uint256 (18 dp)
+  {"constant":true,"inputs":[],"name":"availableTokens","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+  // buy() payable
+  {"inputs":[],"name":"buy","outputs":[],"stateMutability":"payable","type":"function"}
+];
 
-  token   = new ethers.Contract(TOKEN_ADDRESS,   TOKEN_ABI,   currentProviderOrSigner);
-  sale    = new ethers.Contract(SALE_ADDRESS,    SALE_ABI,    currentProviderOrSigner);
-  staking = new ethers.Contract(STAKING_ADDRESS, STAKING_ABI, currentProviderOrSigner);
-
-  headerSale && (headerSale.value = SALE_ADDRESS);
-  headerStaking && (headerStaking.value = STAKING_ADDRESS);
-}
-
-/* ---------- Chain guard (force BSC Testnet) ---------- */
-async function ensureBscTestnet() {
-  // BSC Testnet: chainId 0x61 / 97
-  try {
-    await window.ethereum.request({
-      method: "wallet_switchEthereumChain",
-      params: [{ chainId: "0x61" }]
-    });
-  } catch (err) {
-    // If chain is not added
-    if (err?.code === 4902) {
-      await window.ethereum.request({
-        method: "wallet_addEthereumChain",
-        params: [{
-          chainId: "0x61",
-          chainName: "BSC Testnet",
-          nativeCurrency: { name: "tBNB", symbol: "tBNB", decimals: 18 },
-          rpcUrls: ["https://data-seed-prebsc-1-s1.binance.org:8545/"],
-          blockExplorerUrls: ["https://testnet.bscscan.com/"]
-        }]
-      });
-    } else {
-      throw err;
-    }
-  }
-}
+// We’re not calling staking yet, keep a tiny stub so the contract builds.
+const FALLBACK_STAKING_ABI = [
+  {"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"stateMutability":"view","type":"function"}
+];
 
 /* ---------- Status helpers ---------- */
 function setStatus(text, color = "#a0aec0") {
@@ -111,41 +83,100 @@ function setStatus(text, color = "#a0aec0") {
 }
 
 function showConnectedUI() {
-  connectBtn  && connectBtn.classList.add("hide");
+  connectBtn    && connectBtn.classList.add("hide");
   disconnectBtn && disconnectBtn.classList.remove("hide");
 }
 
 function showDisconnectedUI() {
-  connectBtn  && connectBtn.classList.remove("hide");
+  connectBtn    && connectBtn.classList.remove("hide");
   disconnectBtn && disconnectBtn.classList.add("hide");
 }
 
-/* ---------- Read-only init (no wallet needed) ---------- */
+/* ---------- Load ABIs (with fallback + error detail) ---------- */
+async function loadAbi(path, fallbackAbi) {
+  try {
+    const res = await fetch(path, { cache: "no-cache" });
+    if (!res.ok) throw new Error(`HTTP ${res.status} for ${path}`);
+    const json = await res.json();
+    const abi = Array.isArray(json) ? json : (json.abi ?? null);
+    if (!abi) throw new Error(`No "abi" array in ${path}`);
+    return abi;
+  } catch (e) {
+    console.warn(`ABI fetch failed for ${path}:`, e);
+    setStatus(`Using fallback ABI for ${path.replace('.json','')}`, "#f59e0b");
+    return fallbackAbi;
+  }
+}
+
+/* ---------- Build contracts ---------- */
+async function makeContracts(currentProviderOrSigner) {
+  const [TOKEN_ABI, SALE_ABI, STAKING_ABI] = await Promise.all([
+    loadAbi("JODA.json",        FALLBACK_TOKEN_ABI),
+    loadAbi("JODASale.json",    FALLBACK_SALE_ABI),
+    loadAbi("JODAStaking.json", FALLBACK_STAKING_ABI),
+  ]);
+
+  token   = new ethers.Contract(TOKEN_ADDRESS,   TOKEN_ABI,   currentProviderOrSigner);
+  sale    = new ethers.Contract(SALE_ADDRESS,    SALE_ABI,    currentProviderOrSigner);
+  staking = new ethers.Contract(STAKING_ADDRESS, STAKING_ABI, currentProviderOrSigner);
+
+  headerSale    && (headerSale.value    = SALE_ADDRESS);
+  headerStaking && (headerStaking.value = STAKING_ADDRESS);
+}
+
+/* ---------- Chain guard ---------- */
+async function ensureBscTestnet() {
+  try {
+    await window.ethereum.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: "0x61" }], // BSC Testnet
+    });
+  } catch (err) {
+    if (err?.code === 4902) {
+      await window.ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [{
+          chainId: "0x61",
+          chainName: "BSC Testnet",
+          nativeCurrency: { name: "tBNB", symbol: "tBNB", decimals: 18 },
+          rpcUrls: ["https://data-seed-prebsc-1-s1.binance.org:8545/"],
+          blockExplorerUrls: ["https://testnet.bscscan.com/"],
+        }],
+      });
+    } else {
+      throw err;
+    }
+  }
+}
+
+/* ---------- Read-only init ---------- */
 async function initReadonly() {
-  // You can point this to a public RPC; using BSC testnet seed here.
   provider = new ethers.JsonRpcProvider("https://data-seed-prebsc-1-s1.binance.org:8545/");
   await makeContracts(provider);
-  setStatus("Ready (read-only RPC)");
-  await refreshAll(); // shows sale stats & (zero) user balances
+  setStatus("Ready (RPC read-only)");
+  await refreshAll();
 }
 
 /* ---------- Wallet-aware init ---------- */
 async function init() {
   try {
-    if (window.ethereum) {
-      try {
-        await ensureBscTestnet();
-      } catch (e) {
-        console.warn("Switch chain warning:", e);
-      }
+    setStatus("Connecting…", "#93c5fd");
 
-      // Build read-only first (for immediate UI)
+    if (typeof ethers === "undefined") {
+      throw new Error("ethers library not loaded (check CDN <script> in index.html)");
+    }
+
+    if (window.ethereum) {
+      // Build with BrowserProvider first so we can query even before connect
       provider = new ethers.BrowserProvider(window.ethereum);
+
+      // Try chain switch silently; if it fails we still proceed and show error later
+      try { await ensureBscTestnet(); } catch (e) { console.warn("Chain switch:", e); }
+
       await makeContracts(provider);
 
-      // Try silent accounts
       const accounts = await provider.send("eth_accounts", []);
-      if (accounts.length > 0) {
+      if (accounts.length) {
         await handleConnected(accounts[0]);
       } else {
         setStatus("Ready (MetaMask detected)", "#10b981");
@@ -153,7 +184,6 @@ async function init() {
         await refreshAll();
       }
 
-      // React to account/chain changes
       window.ethereum.on?.("accountsChanged", async (accs) => {
         if (accs.length > 0) {
           await handleConnected(accs[0]);
@@ -163,13 +193,12 @@ async function init() {
           showDisconnectedUI();
           walletAddress && (walletAddress.value = "");
           yourWallet && (yourWallet.value = "");
-          await makeContracts(provider); // back to provider only
+          await makeContracts(provider);
           await refreshAll();
         }
       });
 
       window.ethereum.on?.("chainChanged", async () => {
-        // On chain change, re-make provider/signer & refresh
         provider = new ethers.BrowserProvider(window.ethereum);
         if (user) signer = await provider.getSigner();
         await makeContracts(signer ?? provider);
@@ -180,10 +209,11 @@ async function init() {
       await initReadonly();
     }
   } catch (err) {
-    console.error(err);
-    setStatus("Error initializing app", "#ef4444");
-    // Fall back to read-only if anything failed
-    if (!provider) await initReadonly();
+    console.error("init() error:", err);
+    setStatus(`Error initializing app: ${err.message ?? err}`, "#ef4444");
+    if (!provider) {
+      try { await initReadonly(); } catch {}
+    }
   }
 }
 
@@ -196,8 +226,8 @@ async function connectWallet() {
     const accounts = await provider.send("eth_requestAccounts", []);
     await handleConnected(accounts[0]);
   } catch (err) {
-    console.error(err);
-    setStatus("Connection failed", "#ef4444");
+    console.error("connectWallet error:", err);
+    setStatus(`Connection failed: ${err?.message ?? err}`, "#ef4444");
   }
 }
 
@@ -209,48 +239,46 @@ async function handleConnected(account) {
   setStatus("Connected", "#10b981");
   showConnectedUI();
 
-  if (walletAddress) walletAddress.value = account;
-  if (yourWallet)    yourWallet.value    = account;
-  if (headerWallet)  headerWallet.value  = account;
+  walletAddress && (walletAddress.value = account);
+  yourWallet && (yourWallet.value    = account);
+  headerWallet && (headerWallet.value = account);
 
   await refreshAll();
 }
 
 function disconnectWallet() {
-  // Programmatic disconnect isn’t supported by MetaMask; we just reset UI/state.
   user = undefined;
   signer = undefined;
-  makeContracts(provider); // back to read-only
+  makeContracts(provider);
   setStatus("Ready (MetaMask detected)", "#10b981");
   showDisconnectedUI();
-  if (walletAddress) walletAddress.value = "";
-  if (yourWallet)    yourWallet.value    = "";
+  walletAddress && (walletAddress.value = "");
+  yourWallet && (yourWallet.value = "");
   refreshAll();
 }
 
 /* ---------- Refreshers ---------- */
 async function refreshSale() {
   if (!sale) return;
-
   try {
     const [active, minBuyWei, rateWei, availableWei] = await Promise.all([
-      sale.saleActive?.() ?? sale.saleActive,               // bool
-      sale.minBuyWei?.() ?? sale.minBuyWei,                 // uint256
-      sale.tokensPerBNB?.() ?? sale.tokensPerBNB,           // uint256 (in 1e18 units)
-      sale.availableTokens?.() ?? sale.availableTokens      // uint256 (18dp)
+      sale.saleActive?.() ?? sale.saleActive,
+      sale.minBuyWei?.() ?? sale.minBuyWei,
+      sale.tokensPerBNB?.() ?? sale.tokensPerBNB,
+      sale.availableTokens?.() ?? sale.availableTokens
     ]);
 
-    // Convert displays
-    const minBuyBnb = toEth(minBuyWei);
-    const tokensPerBnbWhole = toUnits(rateWei, 18);
-    const availableJoda = toUnits(availableWei, 18);
+    const minBuyBnb        = toEth(minBuyWei);
+    const tokensPerBnb     = toUnits(rateWei, 18);
+    const availableJoda    = toUnits(availableWei, 18);
 
     saleActiveEl && (saleActiveEl.textContent = active ? "Yes" : "No");
     minBuyEl     && (minBuyEl.textContent     = fmt(minBuyBnb, 6));
-    rateEl       && (rateEl.textContent       = fmt(tokensPerBnbWhole, 6));
+    rateEl       && (rateEl.textContent       = fmt(tokensPerBnb, 6));
     availEl      && (availEl.textContent      = fmt(availableJoda, 6));
   } catch (e) {
     console.warn("refreshSale()", e);
+    setStatus(`Sale refresh error: ${e?.message ?? e}`, "#f59e0b");
   }
 }
 
@@ -258,9 +286,8 @@ async function refreshBalances() {
   try {
     const [bnb, joda] = await Promise.all([
       user ? provider.getBalance(user) : Promise.resolve(0n),
-      user ? token.balanceOf(user) : Promise.resolve(0n),
+      user ? token.balanceOf(user)     : Promise.resolve(0n),
     ]);
-
     bnbBalEl  && (bnbBalEl.textContent  = fmt(toEth(bnb), 6));
     jodaBalEl && (jodaBalEl.textContent = fmt(toUnits(joda, 18), 6));
   } catch (e) {
@@ -283,7 +310,6 @@ async function doBuy() {
     if (!bnbStr) return alert("Enter BNB amount.");
     const valueWei = toWei(bnbStr);
 
-    // Pre-check min buy
     const minBuyWei = await (sale.minBuyWei?.() ?? sale.minBuyWei);
     if (valueWei < minBuyWei) {
       const need = fmt(toEth(minBuyWei), 6);
@@ -301,23 +327,18 @@ async function doBuy() {
     buyMsg && (buyMsg.textContent = `Buy confirmed: ${r?.hash?.slice(0, 10)}…`);
     await refreshAll();
   } catch (e) {
-    console.error(e);
+    console.error("doBuy error:", e);
     alert(e?.info?.error?.message ?? e?.shortMessage ?? e?.message ?? "Buy failed");
   } finally {
     buyBtn && (buyBtn.disabled = false);
   }
 }
 
-/* ---------- Event wiring ---------- */
+/* ---------- Events ---------- */
 connectBtn    && connectBtn.addEventListener("click", connectWallet);
 disconnectBtn && disconnectBtn.addEventListener("click", disconnectWallet);
 buyBtn        && buyBtn.addEventListener("click", doBuy);
 
 /* ---------- Kickoff ---------- */
 init();
-
-// Optional: auto-refresh some panels every 20s
-setInterval(() => {
-  refreshSale();
-  refreshBalances();
-}, 20000);
+setInterval(() => { refreshSale(); refreshBalances(); }, 20000);
