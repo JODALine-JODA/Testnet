@@ -8,10 +8,26 @@
   <!-- Styles -->
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Ethers v6 (keep this for app.js) -->
-  <script src="https://cdn.jsdelivr.net/npm/ethers@6.6.2/dist/ethers.min.js"></script>
+<!-- Styles -->
+<link rel="stylesheet" href="styles.css" />
 
-  <!-- Your app logic (already in repo) -->
+<!-- Load ethers.js v6 from two CDNs (primary + fallback) -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js" defer></script>
+<script src="https://unpkg.com/ethers@6.13.2/dist/ethers.umd.min.js" defer></script>
+
+<!-- Tiny sanity check -->
+<script defer>
+  window.addEventListener('DOMContentLoaded', () => {
+    if (!window.ethers) {
+      const el = document.getElementById('status') || document.body;
+      const warn = document.createElement('div');
+      warn.style.cssText = 'margin:8px 0;padding:8px 12px;border-radius:10px;background:#10263d;color:#36f;display:inline-block';
+      warn.textContent = 'Error: ethers.js not loaded. Please refresh (Ctrl+F5).';
+      el.prepend ? el.prepend(warn) : el.insertBefore(warn, el.firstChild);
+    }
+  });
+</script>
+<!-- Load your app AFTER ethers.js -->
   <script src="app.js" defer></script>
 </head>
 <body>
