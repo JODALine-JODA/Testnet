@@ -25,17 +25,20 @@ body {
   z-index: 100;
 }
 
-.logo {
+/* Logo container */
+.logo a {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: center;    /* vertical centering */
+  gap: 10px;              /* spacing between logo and text */
+  font-size: 1.2rem;
   font-weight: bold;
-  font-size: 20px;
-  color: #00c2ff;
+  color: #00bfff;         /* cyan-blue */
+  text-decoration: none;  /* remove underline */
 }
 
-.logo img {
-  border-radius: 50%;
+/* Hover effect for better UX */
+.logo a:hover {
+  color: #1ec8ff;         /* lighter blue on hover */
 }
 
 /* Dropdown menu */
