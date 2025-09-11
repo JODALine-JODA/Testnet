@@ -2,166 +2,179 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>JODALINE (JODA) • Buy & Earn Back (BSC Testnet)</title>
+  <title>JODALINE (JODA) • Shop • Buy • Stake (BSC Testnet)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- ethers v6 (two CDNs, one is fallback), then our app -->
+  <!-- ethers v6 (two CDNs), then your app -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js" defer></script>
   <script src="https://unpkg.com/ethers@6.13.2/dist/ethers.umd.min.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
-  <!-- ========== NAVBAR ========== -->
-  <header class="nav">
-    <a class="brand" href="index.html">
-      <img src="JODALogo.png" alt="JODA" class="brand__logo" />
-      <span class="brand__name">JODALINE <span class="brand__ticker">(JODA)</span></span>
+  <!-- Header -->
+  <header class="hero">
+    <a class="brand" href="index.html" aria-label="Home">
+      <img src="JODALogo.png" alt="JODA Logo" class="brand__logo" />
+      <div class="brand__text">
+        <div class="brand__name">JODALINE</div>
+        <div class="brand__ticker">(JODA)</div>
+      </div>
     </a>
 
-    <div class="nav__controls">
-      <select id="languageSelector" class="select">
+    <div class="hero__actions">
+      <!-- Round language button opens the select -->
+      <button id="langBtn" class="iconBtn" title="Language">🌍</button>
+      <select id="languageSelector" class="langSelect" aria-label="Select language">
         <option value="en">English</option>
-        <option value="es">Español</option><option value="fr">Français</option>
-        <option value="de">Deutsch</option><option value="it">Italiano</option>
-        <option value="pt">Português</option><option value="ru">Русский</option>
-        <option value="uk">Українська</option><option value="sq">Shqip</option>
-        <option value="tr">Türkçe</option><option value="ar">العربية</option>
-        <option value="fa">فارسی</option><option value="hi">हिन्दी</option>
-        <option value="ur">اردو</option><option value="zh">中文</option>
-        <option value="ja">日本語</option><option value="ko">한국어</option>
-        <option value="sw">Kiswahili</option><option value="am">አማርኛ</option>
-        <option value="yo">Yorùbá</option><option value="ha">Hausa</option>
-        <option value="pl">Polski</option><option value="el">Ελληνικά</option>
-        <option value="nl">Nederlands</option><option value="ro">Română</option>
+        <option value="es">Español (Spanish)</option>
+        <option value="fr">Français (French)</option>
+        <option value="de">Deutsch (German)</option>
+        <option value="it">Italiano (Italian)</option>
+        <option value="pt">Português (Portuguese)</option>
+        <option value="ru">Русский (Russian)</option>
+        <option value="uk">Українська (Ukrainian)</option>
+        <option value="sq">Shqip (Albanian)</option>
+        <option value="tr">Türkçe (Turkish)</option>
+        <option value="ar">العربية (Arabic)</option>
+        <option value="fa">فارسی (Farsi)</option>
+        <option value="hi">हिन्दी (Hindi)</option>
+        <option value="ur">اردو (Urdu)</option>
+        <option value="zh">中文 (Chinese)</option>
+        <option value="ja">日本語 (Japanese)</option>
+        <option value="ko">한국어 (Korean)</option>
+        <option value="sw">Kiswahili (Swahili)</option>
+        <option value="am">አማርኛ (Amharic)</option>
+        <option value="yo">Yorùbá (Yoruba)</option>
+        <option value="ha">Hausa</option>
+        <option value="pl">Polski (Polish)</option>
+        <option value="el">Ελληνικά (Greek)</option>
+        <option value="nl">Nederlands (Dutch)</option>
+        <option value="ro">Română (Romanian)</option>
       </select>
 
-      <button id="themeToggle" class="btn btn--ghost">🌙</button>
-
-      <span id="walletState" class="badge badge--muted">Connecting…</span>
-      <button id="connectBtn" class="btn">Connect Wallet</button>
-      <button id="disconnectBtn" class="btn btn--ghost">Disconnect</button>
+      <button id="themeToggle" class="btn ghost" aria-label="Toggle theme">🌙 Dark</button>
+      <button id="connectBtn" class="btn primary">🔗 Connect Wallet</button>
+      <button id="disconnectBtn" class="btn subtle">🚪 Disconnect</button>
     </div>
   </header>
 
-  <!-- Status line for errors/hints -->
-  <div id="status" class="status center"></div>
+  <div id="status" class="status">Connecting…</div>
 
-  <!-- ========== HERO (bold, bright, simple) ========== -->
-  <section class="hero">
-    <div class="container hero__grid">
-      <div class="hero__copy">
-        <p class="eyebrow">Shop online • Get JODA back</p>
-        <h1 id="shopTitle" class="hero__title">Every time you shop through the JODA App or Website, you earn quality Crypto coins which you can spend or stake to grow for you.</h1>
-        <p id="shopLead" class="hero__lead">
-          Use JODALINE’s shopping flow - get rewarded back in JODA.., but you can also buy JODA coins.
-        </p>
-        <div class="hero__ctas">
-          <a href="#buy" class="btn btn--lg">Buy JODA</a>
-          <a href="#stake" class="btn btn--ghost btn--lg">Stake JODA</a>
-        </div>
+  <!-- Register / Login (local-only MVP) -->
+  <section class="section">
+    <h2 class="section__title">Register / Login</h2>
+    <p class="muted small">
+      Name &amp; Email only. We keep it simple. For withdrawals you’ll complete KYC later.
+    </p>
+    <div class="row">
+      <div class="card">
+        <h3>Create account</h3>
+        <label>Name</label>
+        <input id="regName" type="text" placeholder="Your name" />
+        <label>Email</label>
+        <input id="regEmail" type="email" placeholder="you@email.com" />
+        <button id="registerBtn" class="btn primary">Register</button>
+        <p class="muted tiny">We store locally (browser) for MVP. No personal data sent to server.</p>
+      </div>
+
+      <div class="card">
+        <h3>Login</h3>
+        <label>Email</label>
+        <input id="loginEmail" type="email" placeholder="you@email.com" />
+        <button id="loginBtn" class="btn">Login</button>
         <div class="kv">
-          <span class="badge">BSC Testnet</span>
-          <span class="badge">Non-custodial</span>
-          <span class="badge">Real on-chain rewards</span>
+          <span>Logged in as</span><span id="loggedUser">—</span>
         </div>
-      </div>
-
-      <div class="hero__art">
-        <div class="card heroCard">
-          <div class="heroCard__header">
-            <img src="JODALogo.png" class="heroCard__logo" alt="JODA" />
-            <div>
-              <div class="heroCard__title">Your personal link</div>
-              <div class="heroCard__sub">Earn JODA when you or friends shop</div>
-            </div>
-          </div>
-          <div class="heroCard__body">
-            <div class="kv">
-              <label class="label">Referral URL</label>
-              <input id="refLink" class="input monospace" readonly />
-            </div>
-            <button id="copyRef" class="btn btn--full">Copy</button>
-          </div>
-        </div>
+        <button id="logoutBtn" class="btn subtle">Logout</button>
       </div>
     </div>
   </section>
 
-  <!-- ========== “HOW IT WORKS” STRIP ========== -->
-  <section class="container grid-3 how">
-    <div class="card">
-      <h3 id="howTitle">How it works</h3>
-      <ul class="bullets">
-        <li>Connect wallet → get your unique link.</li>
-        <li>Shop online or share the link with friends.</li>
-        <li>When a purchase clears, JODA is delivered on-chain.</li>
-      </ul>
-    </div>
-    <div class="card">
-      <h3>Popular Stores</h3>
-      <div class="chipRow">
-        <span class="chip">Store A</span><span class="chip">Store B</span>
-        <span class="chip">Store C</span><span class="chip">Store D</span>
+  <!-- Affiliate / Rewards panel -->
+  <section class="section">
+    <h2 class="section__title">Earn while you shop</h2>
+    <p class="muted">
+      Go shopping via JODALINE. Every successful purchase earns JODA.
+    </p>
+
+    <div class="row">
+      <div class="card">
+        <h3>Your referral link</h3>
+        <p class="muted small">Share and earn extra JODA from your network.</p>
+        <input id="refLink" class="addr" readonly />
+        <button id="copyRef" class="btn">Copy link</button>
+        <div class="kv"><span>Clicks</span><span id="refClicks">—</span></div>
+        <div class="kv"><span>Signups</span><span id="refSignups">—</span></div>
+        <div class="kv"><span>Earnings (JODA)</span><span id="refEarnings">—</span></div>
       </div>
-      <small class="muted">More stores rolling out.</small>
-    </div>
-    <div class="card">
-      <h3>Quick IDs</h3>
-      <div class="kv"><label>Your wallet</label><input id="addrUser" class="input monospace" readonly></div>
-      <div class="kv"><label>Sale</label><input id="addrSale" class="input monospace" readonly></div>
-      <div class="kv"><label>Staking</label><input id="addrStaking" class="input monospace" readonly></div>
+
+      <div class="card">
+        <h3>Quick Shopping</h3>
+        <p class="muted small">Pick a category to start. (MVP demo links)</p>
+        <div class="chips">
+          <button class="chip" data-url="https://www.amazon.com">Electronics</button>
+          <button class="chip" data-url="https://www.aliexpress.com">Fashion</button>
+          <button class="chip" data-url="https://www.booking.com">Travel</button>
+          <button class="chip" data-url="https://www.ebay.com">Marketplace</button>
+          <button class="chip" data-url="https://www.temu.com">Deals</button>
+        </div>
+        <p class="muted tiny">In the full build, these route through your tracked partner URLs.</p>
+      </div>
     </div>
   </section>
 
-  <!-- ========== BUY & STAKE ========== -->
-  <section class="container grid-2" id="buy">
-    <div class="card">
-      <h2 id="buyTitle">Buy JODA</h2>
-      <div class="kv"><label>BNB to spend</label><input id="buyAmount" type="number" step="0.0001" placeholder="0.05" class="input"></div>
-      <button id="buyBtn" class="btn">Buy</button>
-      <div class="divider"></div>
-      <h3 id="saleStatusTitle">Sale Status</h3>
-      <div class="kv"><span>Active</span><span id="saleActive">--</span></div>
-      <div class="kv"><span>Min (BNB)</span><span id="saleMin">--</span></div>
-      <div class="kv"><span>Tokens / 1 BNB</span><span id="saleRate">--</span></div>
-      <div class="kv"><span>Available (JODA)</span><span id="saleAvail">--</span></div>
-    </div>
+  <!-- Buy & Stake -->
+  <section class="section">
+    <h2 class="section__title">Buy &amp; Stake</h2>
+    <div class="row">
+      <div class="card">
+        <h3>Buy JODA</h3>
+        <label>BNB to spend</label>
+        <input id="buyAmount" type="number" step="0.0001" placeholder="0.05" />
+        <button id="buyBtn" class="btn primary">Buy</button>
+        <div class="divider"></div>
+        <h4>Sale Status</h4>
+        <div class="kv"><span>Active</span><span id="saleActive">—</span></div>
+        <div class="kv"><span>Min (BNB)</span><span id="saleMin">—</span></div>
+        <div class="kv"><span>Tokens / 1 BNB</span><span id="saleRate">—</span></div>
+        <div class="kv"><span>Available (JODA)</span><span id="saleAvail">—</span></div>
+      </div>
 
-    <div class="card" id="stake">
-      <h2 id="stakeTitle">Stake JODA</h2>
-      <div class="kv"><label>Amount (JODA)</label><input id="stakeAmount" type="number" step="1" placeholder="100" class="input"></div>
-      <div class="kv">
+      <div class="card">
+        <h3>Stake JODA</h3>
+        <label>Amount (JODA)</label>
+        <input id="stakeAmount" type="number" step="1" placeholder="100" />
         <label>Lock (months)</label>
-        <select id="stakeMonths" class="select"><option>3</option><option>6</option><option>12</option><option>24</option><option>36</option></select>
-      </div>
-      <div class="rowBtns">
-        <button id="approveBtn" class="btn btn--ghost">Approve</button>
-        <button id="stakeBtn" class="btn">Stake</button>
+        <select id="stakeMonths">
+          <option>3</option><option>6</option><option>12</option><option>24</option><option>36</option>
+        </select>
+        <div class="btnRow">
+          <button id="approveBtn" class="btn">Approve</button>
+          <button id="stakeBtn" class="btn primary">Stake</button>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- ========== BALANCES ========== -->
-  <section class="container">
-    <div class="card">
-      <h2 id="balanceTitle">Your Balances</h2>
-      <!-- If you later want USD, we’ll compute it from a price API and add “≈ $USD” here -->
-      <div class="kv"><span>BNB</span><span id="balanceBNB">--</span></div>
-      <div class="kv"><span>JODA</span><span id="balanceJODA">--</span></div>
-    </div>
-  </section>
+  <!-- Balances & Addresses -->
+  <section class="section">
+    <h2 class="section__title">Your Wallet</h2>
+    <div class="row">
+      <div class="card">
+        <h3>Balances</h3>
+        <div class="kv"><span>BNB</span><span id="balanceBNB">—</span></div>
+        <div class="kv"><span>JODA</span><span id="balanceJODA">—</span></div>
+      </div>
 
-  <footer class="footer">
-    <div class="container footer__grid">
-      <small>© <span id="year"></span> JODALINE • Built on BSC Testnet</small>
-      <div class="footer__links">
-        <a href="#how">How it works</a>
-        <a href="#buy">Buy</a>
-        <a href="#stake">Stake</a>
+      <div class="card">
+        <h3>Addresses</h3>
+        <div class="kv"><span>Your wallet</span><input id="addrUser" class="addr" readonly /></div>
+        <div class="kv"><span>Sale</span><input id="addrSale" class="addr" readonly /></div>
+        <div class="kv"><span>Staking</span><input id="addrStaking" class="addr" readonly /></div>
       </div>
     </div>
-  </footer>
+  </section>
 </body>
 </html>
 
