@@ -5,103 +5,133 @@
   <title>JODALINE (JODA) • Buy & Stake (BSC Testnet)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Stylesheet with versioning -->
-  <link rel="stylesheet" href="styles.css?v=2" />
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css" />
 
   <!-- ethers v6 (two CDNs), then your app -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js" defer></script>
   <script src="https://unpkg.com/ethers@6.13.2/dist/ethers.umd.min.js" defer></script>
-
-  <!-- Your app logic (cache-busted) -->
-  <script src="app.js?v=2" defer></script>
-
-  <!-- Dark/Light theme logic -->
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const saved = localStorage.getItem("theme") || "dark";
-      document.body.dataset.theme = saved;
-      const btn = document.getElementById("themeToggle");
-if (btn) btn.textContent = saved === "dark" ? " ☀️ Light" : " 🌙 Dark";
-    });
-
-    function toggleTheme() {
-      const current = document.body.dataset.theme || "dark";
-      const next = current === "dark" ? "light" : "dark";
-      document.body.dataset.theme = next;
-      localStorage.setItem("theme", next);
-      const btn = document.getElementById("themeToggle");
-if (btn) btn.textContent = next === "dark" ? " ☀️ Light" : " 🌙 Dark";
-    }
-  </script>
-
-  <style>
-    /* Example quick theme switch */
-    body[data-theme="dark"] {
-      background: linear-gradient(135deg,#0a192f,#1e3a8a);
-Color: #fff;
-    }
-    body[data-theme="light"] {
-      background: #f7fafc;
-      color: #111;
-    }
-    #themeToggle {
-      padding: 8px 14px;
-Border radius: 8px;
-      border: 1px solid #2563eb;
-      background: #2563eb;
-Color: #fff;
-      cursor: pointer;
-    }
-    #themeToggle:hover { background: #1e40af; }
-  </style>
+  <script src="app.js" defer></script>
 </head>
-
 <body>
+  <!-- Brand header -->
   <header>
     <img src="JODALogo.png" alt="JODA Logo" />
     <div class="brand-title">JODALINE <span class="brand-ticker">(JODA)</span></div>
   </header>
 
- <div class="topbar">
-  <label for="languageSelector">🌍</label>
-  <select id="languageSelector">
-    <option value="en">English</option>
-    <option value="es">Español (Spanish)</option>
-    <option value="fr">Français (French)</option>
+  <!-- Top controls -->
+  <div class="topbar">
+    <label for="languageSelector" title="Language">🌍</label>
+    <select id="languageSelector">
+      <option value="en">English</option>
+      <option value="es">Español (Spanish)</option>
+      <option value="fr">Français (French)</option>
 <option value="de">German (English)</option>
-    <option value="it">Italiano (Italian)</option>
-    <option value="pt">Português (Portuguese)</option>
-    <option value="ru">Русский (Russian)</option>
-    <option value="uk">Українська (Ukrainian)</option>
-    <option value="sq">Shqip (Albanian)</option>
-    <option value="tr">Türkçe (Turkish)</option>
-    <option value="ar">العربية (Arabic)</option>
-    <option value="fa">فارسی (Farsi)</option>
-    <option value="hi">हिन्दी (Hindi)</option>
+      <option value="it">Italiano (Italian)</option>
+      <option value="pt">Português (Portuguese)</option>
+      <option value="ru">Русский (Russian)</option>
+      <option value="uk">Українська (Ukrainian)</option>
+      <option value="sq">Shqip (Albanian)</option>
+      <option value="tr">Türkçe (Turkish)</option>
+      <option value="ar">العربية (Arabic)</option>
+      <option value="fa">فارسی (Farsi)</option>
+      <option value="hi">हिन्दी (Hindi)</option>
 <option value="your">اردو (Urdu)</option>
-    <option value="zh">中文 (Chinese)</option>
+      <option value="zh">中文 (Chinese)</option>
 <option value="yes">日本語 (Japanese)</option>
-    <option value="ko">한국어 (Korean)</option>
-    <option value="sw">Kiswahili (Swahili)</option>
-    <option value="am">አማርኛ (Amharic)</option>
-    <option value="yo">Yorùbá (Yoruba)</option>
-    <option value="ha">Hausa</option>
-    <option value="pl">Polski (Polish)</option>
-    <option value="el">Ελληνικά (Greek)</option>
-    <option value="nl">Nederlands (Dutch)</option>
-    <option value="ro">Română (Romanian)</option>
-  </select>
+      <option value="ko">한국어 (Korean)</option>
+      <option value="sw">Kiswahili (Swahili)</option>
+      <option value="am">አማርኛ (Amharic)</option>
+      <option value="yo">Yorùbá (Yoruba)</option>
+      <option value="ha">Hausa</option>
+      <option value="pl">Polski (Polish)</option>
+      <option value="el">Ελληνικά (Greek)</option>
+      <option value="nl">Nederlands (Dutch)</option>
+      <option value="ro">Română (Romanian)</option>
+    </select>
 
-  <!-- Theme toggle -->
-<button id="themeToggle" aria-label="Toggle theme"> 🌙 Dark</button>
+    <!-- Theme toggle (dark/light) -->
+<button id="themeToggle" aria-label="Toggle theme"> 🌙 Light</button>
 
 <button id="connectBtn"> 🔗 Connect Wallet</button>
 <button id="disconnectBtn"> 🚪 Disconnect</button>
-  <span id="walletState" class="muted"></span>
-</div>
+    <span id="walletState" class="muted"></span>
+  </div>
 
-<div id="status">Connecting... </div>
+  <!-- Status line (JS writes here) -->
+<div id="status" class="center">Connecting... </div>
 
-  <!-- Your sections (Buy, Stake, Balances, etc.) remain unchanged -->
+  <!-- MAIN CONTENT — these IDs are used by app.js -->
+  <section>
+    <!-- HERO copy -->
+    <h1 id="shopTitle">Shop online • Get JODA back</h1>
+    <p id="shopLead" class="muted">
+Use JODALINE's shopping flow — every time you spend, you get rewarded back in JODA tokens.
+    </p>
+
+    <!-- BUY + STAKE -->
+    <div class="row">
+      <!-- BUY -->
+      <div class="card">
+        <h2 id="buyTitle">Buy JODA</h2>
+
+        <div class="kv">
+          <label for="buyAmount">BNB to spend</label>
+          <input id="buyAmount" type="number" step="0.0001" placeholder="0.05" />
+        </div>
+        <div class="kv"><button id="buyBtn">Buy</button><span class="badge">Min shown below</span></div>
+
+        <h3 id="saleStatusTitle" class="mt-16">Sale Status</h3>
+        <div class="kv"><span>Active</span><span id="saleActive">--</span></div>
+<div class="kv"><span>min (BNB)</span><span id="saleMin">--</span></div>
+        <div class="kv"><span>Tokens / 1 BNB</span><span id="saleRate">--</span></div>
+        <div class="kv"><span>Available (JODA)</span><span id="saleAvail">--</span></div>
+      </div>
+
+      <!-- STAKE -->
+      <div class="card">
+        <h2 id="stakeTitle">Stake JODA</h2>
+
+        <div class="kv">
+          <label for="stakeAmount">Amount (JODA)</label>
+          <input id="stakeAmount" type="number" step="1" placeholder="100" />
+        </div>
+        <div class="kv">
+          <label for="stakeMonths">Lock (months)</label>
+          <select id="stakeMonths">
+            <option>3</option><option>6</option><option>12</option><option>24</option><option>36</option>
+          </select>
+        </div>
+        <div class="kv" style="gap:8px">
+          <button id="approveBtn">Approve</button>
+          <button id="stakeBtn">Stake</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BALANCES -->
+    <div class="card mt-16">
+      <h2 id="balanceTitle">Your Balances</h2>
+      <div class="kv"><span>BNB</span><span id="balanceBNB">--</span></div>
+      <div class="kv"><span>JODA</span><span id="balanceJODA">--</span></div>
+    </div>
+
+    <!-- ADDRESSES + REF LINK -->
+    <div class="card mt-16">
+      <h3>Addresses</h3>
+      <div class="kv"><span>Your wallet</span><input id="addrUser" class="addr" readonly /></div>
+      <div class="kv"><span>Sale</span><input id="addrSale" class="addr" readonly /></div>
+<div class="kv"><span>staking</span><input id="addrStaking" class="addr" readonly /></div>
+      <div class="kv"><span>Referral link</span>
+        <input id="refLink" class="addr" readonly />
+        <button id="copyRef">Copy</button>
+      </div>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <h3 id="howTitle" class="mt-24">How it works</h3>
+    <p class="muted">Connect wallet → Buy JODA (Testnet) → Approve → Stake → Unstake at maturity.</p>
+  </section>
 </body>
 </html>
