@@ -21,14 +21,13 @@
   </header>
 
   <!-- Topbar controls -->
-  <div class="topbar">
-    <div class="lang-globe">🌍</div>
-    <select id="languageSelector">
-      <option value="en">English</option>
-      <option value="de">Deutsch</option>
-      <option value="fr">Français</option>
-      <option value="es">Español</option>
-    </select>
+  <!-- Language control -->
+<div class="lang" id="langCtl">
+  <button id="langToggle" class="btn-ghost">
+    🌍 <span id="langCurrent">English</span>
+  </button>
+  <div id="langMenu" class="lang-menu"></div>
+</div>
 
     <button id="themeToggle">☀️ Light</button>
     <button id="connectBtn">🔗 Connect Wallet</button>
