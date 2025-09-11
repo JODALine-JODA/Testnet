@@ -2,81 +2,106 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>JODALINE (JODA) • Shop • Buy • Stake (BSC Testnet)</title>
+  <title>JODALINE (JODA) • Buy & Stake (BSC Testnet)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- ethers v6 (two CDNs), then your app -->
+  <!-- ethers v6 (two CDNs for resilience), then your app -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js" defer></script>
   <script src="https://unpkg.com/ethers@6.13.2/dist/ethers.umd.min.js" defer></script>
   <script src="app.js" defer></script>
 </head>
-<body>
-  <!-- Header -->
+<body class="dark">
+  <!-- Header / brand -->
   <header class="header">
-    <a href="index.html" class="brand">
-      <img src="JODALogo.png" alt="JODA Logo" class="brand__logo" />
-      <div class="brand__title">JODALINE <span class="brand__ticker">(JODA)</span></div>
+    <a class="brand" href="index.html" aria-label="JODALINE Home">
+      <img src="JODALogo.png" alt="JODA Logo" height="40" />
+      <span class="brand-title">JODALINE <span class="brand-ticker">(JODA)</span></span>
     </a>
   </header>
 
-  <!-- Topbar controls -->
-  <!-- Language control -->
-<div class="lang" id="langCtl">
-  <button id="langToggle" class="btn-ghost">
-    🌍 <span id="langCurrent">English</span>
-  </button>
-  <div id="langMenu" class="lang-menu"></div>
-</div>
+  <!-- Topbar: language, theme, wallet -->
+  <div class="topbar">
+    <button id="themeToggle" aria-label="Toggle theme">🌙 Dark</button>
 
-    <button id="themeToggle">☀️ Light</button>
+    <label for="languageSelector" class="langIcon" title="Language">🌍</label>
+    <select id="languageSelector">
+      <option value="en">English</option>
+      <option value="es">Español (Spanish)</option>
+      <option value="fr">Français (French)</option>
+      <option value="de">Deutsch (German)</option>
+      <option value="it">Italiano (Italian)</option>
+      <option value="pt">Português (Portuguese)</option>
+      <option value="ru">Русский (Russian)</option>
+      <option value="uk">Українська (Ukrainian)</option>
+      <option value="sq">Shqip (Albanian)</option>
+      <option value="tr">Türkçe (Turkish)</option>
+      <option value="ar">العربية (Arabic)</option>
+      <option value="fa">فارسی (Farsi)</option>
+      <option value="hi">हिन्दी (Hindi)</option>
+      <option value="ur">اردو (Urdu)</option>
+      <option value="zh">中文 (Chinese)</option>
+      <option value="ja">日本語 (Japanese)</option>
+      <option value="ko">한국어 (Korean)</option>
+      <option value="sw">Kiswahili (Swahili)</option>
+      <option value="am">አማርኛ (Amharic)</option>
+      <option value="yo">Yorùbá (Yoruba)</option>
+      <option value="ha">Hausa</option>
+      <option value="pl">Polski (Polish)</option>
+      <option value="el">Ελληνικά (Greek)</option>
+      <option value="nl">Nederlands (Dutch)</option>
+      <option value="ro">Română (Romanian)</option>
+    </select>
+
     <button id="connectBtn">🔗 Connect Wallet</button>
     <button id="disconnectBtn">🚪 Disconnect</button>
     <span id="walletState" class="muted"></span>
   </div>
 
-  <div id="status">Ready</div>
+  <!-- Status line -->
+  <div id="status" class="status">Connecting…</div>
 
-  <main class="container">
-    <!-- Hero -->
-    <section class="card aff-card">
-      <div class="aff-hero">
-        <div class="aff-copy">
-          <h1 id="shopTitle">Shop online • Get JODA back</h1>
-          <p>Every time you spend through JODALINE, you get rewarded back in JODA tokens.</p>
-          <div class="badges">
-            <span class="badge">No personal data</span>
-            <span class="badge">Instant rewards</span>
-            <span class="badge">Easy crypto</span>
-          </div>
-        </div>
-        <div>
-          <button id="goShop" class="secondary">🛒 Go Shopping</button>
-        </div>
-      </div>
+  <main>
+    <!-- Hero copy -->
+    <section class="hero">
+      <h1 id="shopTitle">Shop online • Get JODA back</h1>
+      <p id="shopLead" class="muted">
+        Use JODALINE’s shopping flow — every time you spend, you get rewarded back in JODA tokens.
+      </p>
     </section>
 
-    <!-- Buy + Stake -->
-    <section class="grid">
+    <!-- Buy / Stake -->
+    <section class="row">
+      <!-- BUY -->
       <div class="card">
         <h2 id="buyTitle">Buy JODA</h2>
-        <div class="kv"><label for="buyAmount">BNB</label><input id="buyAmount" type="number" placeholder="0.05" step="0.0001" /></div>
+        <div class="kv">
+          <label for="buyAmount">BNB to spend</label>
+          <input id="buyAmount" type="number" step="0.0001" placeholder="0.05" />
+        </div>
         <button id="buyBtn">Buy</button>
 
-        <h3 id="saleStatusTitle">Sale Status</h3>
+        <h3 id="saleStatusTitle" style="margin-top:18px;">Sale Status</h3>
         <div class="kv"><span>Active</span><span id="saleActive">--</span></div>
         <div class="kv"><span>Min (BNB)</span><span id="saleMin">--</span></div>
         <div class="kv"><span>Tokens / 1 BNB</span><span id="saleRate">--</span></div>
         <div class="kv"><span>Available (JODA)</span><span id="saleAvail">--</span></div>
       </div>
 
+      <!-- STAKE -->
       <div class="card">
         <h2 id="stakeTitle">Stake JODA</h2>
-        <div class="kv"><label for="stakeAmount">Amount</label><input id="stakeAmount" type="number" placeholder="100" /></div>
-        <div class="kv"><label for="stakeMonths">Months</label>
-          <select id="stakeMonths"><option>3</option><option>6</option><option>12</option><option>24</option><option>36</option></select>
+        <div class="kv">
+          <label for="stakeAmount">Amount (JODA)</label>
+          <input id="stakeAmount" type="number" step="1" placeholder="100" />
         </div>
-        <div class="row">
+        <div class="kv">
+          <label for="stakeMonths">Lock (months)</label>
+          <select id="stakeMonths">
+            <option>3</option><option>6</option><option>12</option><option>24</option><option>36</option>
+          </select>
+        </div>
+        <div class="kv" style="gap:8px">
           <button id="approveBtn">Approve</button>
           <button id="stakeBtn">Stake</button>
         </div>
@@ -90,36 +115,24 @@
       <div class="kv"><span>JODA</span><span id="balanceJODA">--</span></div>
     </section>
 
-    <!-- Addresses -->
+    <!-- Addresses & Referral -->
     <section class="card">
       <h3>Addresses</h3>
       <div class="kv"><span>Your wallet</span><input id="addrUser" class="addr" readonly /></div>
       <div class="kv"><span>Sale</span><input id="addrSale" class="addr" readonly /></div>
       <div class="kv"><span>Staking</span><input id="addrStaking" class="addr" readonly /></div>
-      <div class="kv"><span>Referral link</span><input id="refLink" class="addr" readonly /><button id="copyRef">Copy</button></div>
-    </section>
-
-    <!-- Register / Login -->
-    <section class="card">
-      <h2>User Access</h2>
-      <div class="form-compact">
-        <input id="regName" type="text" placeholder="Name" />
-        <input id="regEmail" type="email" placeholder="Email" />
-        <button id="regBtn">Register</button>
-      </div>
-      <div class="form-compact" style="margin-top:10px;">
-        <input id="loginEmail" type="email" placeholder="Email" />
-        <button id="loginBtn">Login</button>
+      <div class="kv">
+        <span>Referral link</span>
+        <input id="refLink" class="addr" readonly />
+        <button id="copyRef">Copy</button>
       </div>
     </section>
 
     <!-- How it works -->
     <section>
-      <h3 id="howTitle">How it works</h3>
-      <p class="muted">1. Register (no personal data) → 2. Connect wallet → 3. Buy JODA → 4. Stake → 5. Earn rewards → 6. Claim with KYC later.</p>
+      <h3 id="howTitle" style="margin-top:24px">How it works</h3>
+      <p class="muted">Connect wallet → Buy JODA (Testnet) → Approve → Stake → Unstake at maturity.</p>
     </section>
   </main>
-
-  <div class="note">JODALINE (JODA) Testnet • 2025</div>
 </body>
 </html>
