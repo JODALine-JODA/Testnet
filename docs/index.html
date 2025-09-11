@@ -2,263 +2,58 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <title>JODALINE (JODA) • Buy & Stake</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>JODALINE (JODA) • Buy & Earn Back (BSC Testnet)</title>
-
-  <!-- Styles -->
   <link rel="stylesheet" href="styles.css" />
-
-<!-- Styles -->
-<link rel="stylesheet" href="styles.css" />
-
-<!-- Load ethers.js v6 from two CDNs (primary + fallback) -->
-<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js" defer></script>
-<script src="https://unpkg.com/ethers@6.13.2/dist/ethers.umd.min.js" defer></script>
-
-<!-- Tiny sanity check -->
-<script defer>
-  window.addEventListener('DOMContentLoaded', () => {
-    if (!window.ethers) {
-      const el = document.getElementById('status') || document.body;
-      const warn = document.createElement('div');
-      warn.style.cssText = 'margin:8px 0;padding:8px 12px;border-radius:10px;background:#10263d;color:#36f;display:inline-block';
-      warn.textContent = 'Error: ethers.js not loaded. Please refresh (Ctrl+F5).';
-      el.prepend ? el.prepend(warn) : el.insertBefore(warn, el.firstChild);
-    }
-  });
-</script>
-<!-- Load your app AFTER ethers.js -->
+  <!-- ethers v6 (two CDNs), then your app -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js" defer></script>
+  <script src="https://unpkg.com/ethers@6.13.2/dist/ethers.umd.min.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
-
-  <!-- Top Navbar -->
-  <header class="navbar">
-    <div class="nav-inner">
-   <a class="brand" href="index.html">
-  <img src="JODALogo.png" alt="JODA Logo" height="36" />
-  <span class="brand-title">JODALINE <span class="brand-ticker">(JODA)</span></span>
-</a>   
-
-      <nav class="nav-links">
-        <div class="dropdown">
-          <button class="dropbtn">Learn ▾</button>
-          <div class="dropdown-content">
-            <a href="#how">How it works</a>
-            <a href="#tokenomics">Tokenomics</a>
-            <a href="#roadmap">Roadmap</a>
-            <a href="#vision">Our Vision</a>
-            <a href="#faq">FAQ</a>
-          </div>
-        </div>
-
-        <div class="dropdown">
-          <button class="dropbtn">Build ▾</button>
-          <div class="dropdown-content">
-            <a href="#partners">Partners</a>
-            <a href="#blog">Blog</a>
-            <a href="#mainnet">Mainnet</a>
-          </div>
-        </div>
-      </nav>
-
-      <div class="wallet-box">
-        <span id="status" class="status-badge">Connecting…</span>
-        <button id="connectBtn" class="btn btn-primary">Connect Wallet</button>
-        <button id="disconnectBtn" class="btn btn-ghost" style="display:none">Disconnect</button>
-      </div>
-    </div>
+  <header>
+    <img src="JODALogo.png" alt="JODA Logo" />
+    <div class="brand-title">JODALINE <span class="brand-ticker">(JODA)</span></div>
   </header>
 
-  <!-- Hero -->
-  <section class="hero hero--split">
-  <div class="container hero__grid">
-    <!-- Left: headline & CTA -->
-    <div class="hero__copy">
-      <h1 class="hero__title">
-        Shop online — get <span class="accent">JODA</span> back
-      </h1>
-      <p class="hero__lead">
-        Use JODALINE’s shopping flow. Every purchase earns JODA tokens you can hold, stake, or redeem.
-      </p>
-
-      <div class="hero__ctas">
-        <a href="#how" class="btn btn-primary">How it works</a>
-        <a href="#buy" class="btn btn-ghost">Buy JODA</a>
-      </div>
-
-      <!-- Wallet status stays visible -->
-      <div class="hero__status">
-        <span id="status" class="status-badge">Connecting…</span>
-        <button id="connectBtn" class="btn btn-primary">Connect Wallet</button>
-        <button id="disconnectBtn" class="btn btn-ghost" style="display:none;">Disconnect</button>
-      </div>
-    </div>
-
-    <!-- Right: illustration / card -->
-    <div class="hero__art">
-      <div class="heroCard">
-        <div class="heroCard__header">
-          <img src="JODALogo.png" alt="JODA" class="heroCard__logo">
-          <div>
-            <div class="heroCard__title">JODALINE <span class="brand-ticker">(JODA)</span></div>
-            <div class="heroCard__sub muted">BSC Testnet dApp</div>
-          </div>
-        </div>
-        <div class="heroCard__body">
-          <div class="kv">
-            <span>Tokens / 1 BNB:</span><span id="rateHuman">—</span>
-            <span>Min Buy (BNB):</span><span id="minBuy">—</span>
-            <span>Available (JODA):</span><span id="available">—</span>
-          </div>
-          <label class="label">BNB to spend</label>
-          <div class="row">
-            <input id="buyBNB" type="text" placeholder="e.g. 0.10">
-            <button id="buyBtn" class="btn btn-primary">Buy</button>
-          </div>
-        </div>
-      </div>
-    </div>
+  <div class="topbar">
+    <label for="languageSelector">🌍</label>
+    <select id="languageSelector">
+      <option value="en">English</option>
+      <!-- (others optional) -->
+    </select>
+    <button id="connectBtn">🔗 Connect Wallet</button>
   </div>
-</section>
 
+  <div id="status">Connecting...</div>
 
-  <!-- Earn / personal link + how it works -->
-  <section id="how" class="container grid-2">
-    <div class="card">
-      <h3>Use your personal link</h3>
-      <p>Share this link with friends or shop through it to earn JODA.</p>
-      <div class="row">
-        <input id="refLink" class="mono" value="https://buy-joda.link/?ref=" readonly />
-        <button id="copyRef" class="btn">Copy</button>
-      </div>
-      <small>Links activate across supported stores. Earnings settle on-chain in JODA.</small>
-    </div>
+  <section>
+    <h1 id="shopTitle">Shop online • Get JODA back</h1>
+    <p id="shopLead">Use JODALINE’s shopping flow…</p>
 
-    <div class="card">
-      <h3>How it works</h3>
-      <ul class="bullets">
-        <li>Connect your wallet → get your unique tag.</li>
-        <li>Shop online or share the link with friends.</li>
-        <li>When a purchase clears, JODA is delivered to your wallet.</li>
-      </ul>
+    <h2 id="buyTitle">Buy JODA</h2>
+    <input id="buyAmount" type="number" placeholder="BNB amount" />
+    <button id="buyBtn">Buy</button>
 
-      <div class="stores">
-        <button class="pill">Store A</button>
-        <button class="pill">Store B</button>
-        <button class="pill">Store C</button>
-        <button class="pill">Store D</button>
-      </div>
-      <small>More stores coming soon.</small>
-    </div>
+    <h2 id="stakeTitle">Stake JODA</h2>
+    <input id="stakeAmount" type="number" placeholder="JODA amount" />
+    <select id="stakeMonths">
+      <option>3</option><option>6</option><option>12</option><option>24</option><option>36</option>
+    </select>
+    <button id="approveBtn">Approve</button>
+    <button id="stakeBtn">Stake</button>
+
+    <h2 id="balanceTitle">Your Balances</h2>
+    <div>BNB: <span id="balanceBNB">--</span></div>
+    <div>JODA: <span id="balanceJODA">--</span></div>
+
+    <h2 id="saleStatusTitle">Sale Status</h2>
+    <div>Active: <span id="saleActive">--</span></div>
+    <div>Min (BNB): <span id="saleMin">--</span></div>
+    <div>Tokens / 1 BNB: <span id="saleRate">--</span></div>
+    <div>Available: <span id="saleAvail">--</span></div>
+
+    <h3 id="howTitle">How it works</h3>
   </section>
-
-  <!-- Buy + Balances -->
-  <section class="container grid-2">
-    <div class="card">
-      <h3>Buy JODA</h3>
-
-      <div class="kv">
-        <span>Sale Active:</span><span id="saleActive">—</span>
-        <span>Min Buy (BNB):</span><span id="minBuy">—</span>
-        <span>Tokens per 1 BNB:</span><span id="rateHuman">—</span>
-        <span>Available (JODA):</span><span id="available">—</span>
-      </div>
-
-      <label class="label">BNB to spend (min shown above)</label>
-      <div class="row">
-        <input id="buyBNB" type="text" placeholder="e.g. 0.10" />
-        <button id="buyBtn" class="btn btn-primary">Buy</button>
-      </div>
-
-      <small class="muted">
-        • Min buy enforced by contract • Tokens arrive after confirmation • BNB goes to treasury wallet on-chain.
-      </small>
-    </div>
-
-    <div class="card">
-      <h3>Your Balances</h3>
-      <div class="kv">
-        <span>BNB:</span><span id="balBNB">—</span>
-        <span>JODA:</span><span id="balJODA">—</span>
-      </div>
-      <small>Auto-refreshes every 20s.</small>
-    </div>
-  </section>
-
-  <!-- Stake -->
-  <section class="container grid-2">
-    <div class="card">
-      <h3>Stake JODA</h3>
-
-      <label class="label">Amount (JODA)</label>
-      <input id="stakeAmount" type="text" placeholder="e.g. 100" />
-
-      <label class="label">Months</label>
-      <div class="select-wrap">
-        <select id="stakeMonths">
-          <option value="3">3 Months</option>
-          <option value="6">6 Months</option>
-          <option value="12">12 Months</option>
-          <option value="24">24 Months</option>
-          <option value="36">36 Months</option>
-        </select>
-      </div>
-
-      <div class="row">
-        <button id="approveBtn" class="btn btn-ghost">Approve</button>
-        <button id="stakeBtn" class="btn btn-primary">Stake</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>Your Stakes</h3>
-      <div id="stakeList" class="small muted">No stakes yet.</div>
-    </div>
-  </section>
-
-  <!-- Info sections (placeholders for your future content) -->
-  <section id="tokenomics" class="container section">
-    <h3>Tokenomics</h3>
-    <p class="muted">Short blurb about supply, allocations, emissions, etc.</p>
-  </section>
-
-  <section id="roadmap" class="container section">
-    <h3>Roadmap</h3>
-    <p class="muted">Milestones and near-term deliverables.</p>
-  </section>
-
-  <section id="vision" class="container section">
-    <h3>Our Vision</h3>
-    <p class="muted">JODALINE bridges shoppers and brands, returning value to people in JODA.</p>
-  </section>
-
-  <section id="faq" class="container section">
-    <h3>FAQ</h3>
-    <p class="muted">Common questions answered here.</p>
-  </section>
-
-  <footer class="footer">
-    <div class="container">
-      <div class="foot-left">© <span id="year"></span> JODALINE • BSC Testnet</div>
-      <div class="foot-right">
-        <a href="#blog">Blog</a>
-        <a href="#partners">Partners</a>
-        <a href="#mainnet">Mainnet</a>
-      </div>
-    </div>
-  </footer>
-
-  <script>
-    // tiny helpers for copy + year
-    document.querySelectorAll('[data-copy]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const sel = btn.getAttribute('data-copy');
-        const el = document.querySelector(sel);
-        if (el) { el.select(); document.execCommand('copy'); btn.textContent = 'Copied'; setTimeout(() => btn.textContent='Copy', 1000); }
-      });
-    });
-    document.getElementById('year').textContent = new Date().getFullYear();
-  </script>
 </body>
 </html>
