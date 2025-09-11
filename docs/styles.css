@@ -1,118 +1,181 @@
-/* ==========
-   JODALINE • Global theme & layout
-   ========== */
+/* ===========================
+   JODALINE (JODA) — styles.css
+   - Dark as default; Light via [data-theme="light"]
+   - Works with current HTML/app.js IDs & classes
+   - Responsive, simple, stable
+   =========================== */
 
-/* Base theme vars (dark) */
-:root{
---BG: radial-gradient(1200px 700px at 10%-10%, RGBA(0,194,255,.10), transparent 60%),
-radial-gradient(1000px 600px at 100%-20%, rgba(30,144,255,.08), transparent 55%),
-linear-gradient(135deg,#0a1022.#0b1c3a 30%, #0e244b 55%, #0b1c3a);
---Panel: RGBA(255,255,255,.06);
-  --edge: rgba(150,192,255,.20);
-  --text: #eaf2ff;
-  --muted: #9fb0c9;
-  --primary: #2dd4ff;
-  --primaryHover:#20b8df;
-  --accent: #64d5ff;
---Chip: #0b2a4b;
-  --chipEdge: rgba(100,180,255,.25);
-  --shadow: 0 18px 60px rgba(0,0,0,.35);
+/* ----- Color tokens */
+:root {
+  /* base (dark) */
+--BG: #0b1426;
+--bg-grade-a: #0a192f;
+--BG-Grad-B: #1e3a8a;
+
+  --panel: rgba(255,255,255,0.06);
+  --panel-edge: rgba(96,165,250,0.35);
+
+  --text: #e8efff;
+  --muted: #9ca3af;
+
+--Brand: #60a5fa;
+  --brand-strong: #2563eb;
+
+  --btn-bg: #2563eb;
+  --btn-bg-hover: #1e40af;
+  --btn-text: #ffffff;
+
+  --field-bg: #0f172a;
+  --field-text: #ffffff;
+  --field-edge: #2563eb;
+
+  --ok: #27c093;
+  --warn: #e2b007;
+  --err: #ff4d4d;
+
+  --shadow: 0 20px 60px rgba(0,0,0,.35);
 }
 
-/* Light mode overrides */
-body.light{
---BG: linear-gradient(135deg,#f7f9ff,#eef4ff);
-  --panel: #ffffff;
-  --edge: rgba(0,0,0,.08);
-  --text: #0b1220;
-  --muted: #576574;
-  --primary: #2563eb;
-  --primaryHover:#1e40af;
-  --accent: #0ea5e9;
---Chip: #f1f5ff;
-  --chipEdge: rgba(0,0,0,.08);
-  --shadow: 0 10px 30px rgba(0,0,0,.15);
+/* ----- Light theme overrides */
+:root[data-theme="light"] {
+--BG: #f5f7fb;
+--BG-Grad-A: #eaf1ff;
+--BG-Grad-B: #cfe0ff;
+
+  --panel: rgba(255,255,255,0.9);
+  --panel-edge: rgba(0,0,0,0.06);
+
+  --text: #0a1222;
+  --muted: #5d6677;
+
+--Brand: #1e3a8a;
+  --brand-strong: #1e40af;
+
+  --btn-bg: #1e40af;
+  --btn-bg-hover: #153179;
+  --btn-text: #ffffff;
+
+  --field-bg: #ffffff;
+  --field-text: #0a1222;
+  --field-edge: #c1c9d6;
+
+  --shadow: 0 10px 28px rgba(0,0,0,.10);
 }
 
-/* Page structure */
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-  margin:0;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
-  background: var(--bg);
+/* ----- Base layout */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   color: var(--text);
+  background: linear-gradient(135deg, var(--bg-grad-a), var(--bg-grad-b));
+  background-attachment: fixed;
 }
 
-/* Top header / brand row */
-header{
-  display:flex; align-items:center; justify-content:center; gap:10px;
-  padding:16px 20px;
-  background: rgba(0,0,0,.20);
-  border-bottom: 1px solid var(--edge);
-Position: Sticky; top:0; z-index: 50;
-Backdrop filter: blur(6px);
+/* ----- header / brand */
+header {
+Display: Flex;
+  align-items: center;
+  justify-content: center;
+Gap: 12px;
+  padding: 16px 20px;
+  background: rgba(0,0,0,0.20);
+  border-bottom: 1px solid var(--panel-edge);
 }
-header img{ height:36px; width:auto; border-radius:50% }
-.brand-title{ font-weight:800; letter-spacing:.3px; color:var(--accent) }
-.brand-ticker{ color:var(--muted); margin-left:6px }
+header img { height: 40px; width: auto; }
+.brand-title { font-weight: 800; letter-spacing: .3px; color: var(--brand); }
+.brand-ticker { color: var(--muted); margin-left: 6px; }
 
-/* Utility text */
-.muted{ color: var(--muted) }
-h1,h2,h3{ margin:.6em 0 .4em }
-h1{ font-size: clamp(28px, 4.2vw, 36px); line-height:1.1; }
-h2{ font-size: clamp(20px, 3.0vw, 24px); }
-
-/* Topbar controls (language, connect, theme) */
-.topbar{
-  display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:center;
-  margin:12px auto; max-width:1100px; padding:0 16px;
+/* ----- Top bar (controls) */
+.topbar {
+Display: Flex;
+  flex-wrap: wrap;
+Gap: 10px;
+  align-items: center;
+  justify-content: center;
+  margin: 12px auto;
+  padding: 0 12px;
+  max-width: 1100px;
 }
-.topbar .lang{ width:auto; max-width:220px }
-
-/* Inputs & buttons */
-select,button,input{
-  background: #0b1c3a; color:#fff;
-  border:1px solid var(--edge);
-  border-radius:10px;
-  padding:10px 14px; font-size:14px;
+select, button, input, .addr {
+  background: var(--field-bg);
+  color: var(--field-text);
+  border: 1px solid var(--field-edge);
+border radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
 }
-button{ background: var(--primary); color:#0a1022; border-color: transparent; cursor:pointer; }
-button:hover{ background: var(--primaryHover); color:#fff; }
-input[type="number"], input[type="text"], input[readonly]{ width:100% }
+button {
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  border: none;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+button:hover { background: var(--btn-bg-hover); }
 
-/* Status banner */
-#status{ margin: 8px auto 16px; text-align:center; color: var(--muted); max-width:1100px; }
+/* Status line */
+#status { 
+  margin: 8px auto 16px;
+Text Align: Center;
+  color: var(--muted);
+  max-width: 950px;
+  padding: 0 12px;
+}
 
-/* Page container & grid */
-section{ max-width:1100px; margin:0 auto; padding:0 16px 50px; }
-.row{ display:grid; grid-template-columns: 1fr 1fr; gap:16px }
-@media (max-width: 900px){ .row{ grid-template-columns: 1fr } }
+/* ----- Sections/cards/grid */
+section { max-width: 1100px; margin: 0 auto; padding: 0 16px 40px; }
+h1, h2, h3 { margin: .5em 0; }
+.muted { color: var(--muted); }
 
-/*Cards*/
-.card{
+.row {
+Display: Grid;
+  grid-template-columns: 1fr 1fr;
+Gap: 18px;
+}
+@media (max-width: 900px) { .row { grid-template-columns: 1fr; } }
+
+.card {
   background: var(--panel);
-  border: 1px solid var(--edge);
+  border: 1px solid var(--panel-edge);
 border radius: 14px;
   padding: 16px;
   box-shadow: var(--shadow);
 }
-.kv{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin:8px 0 }
-.addr{ width:100% }
 
-/* Chips / inline pills */
-.chip{
-Display:Inline-Flex; align-items:center; gap:10px;
-  background: var(--chip); border:1px solid var(--chipEdge); color: var(--text);
-padding:8px 12px; Border radius: 999px;
+/* Key-value lines */
+.kv {
+Display: Flex;
+  justify-content: space-between;
+  align-items: center;
+Gap: 12px;
+  margin: 8px 0;
 }
 
-/* Hero headline spacing */
-#shopTitle{ margin-top: 6px }
-#shopLead{ max-width: 60ch }
+/* Inputs */
+input[type="number"], input[type="text"], .addr {
+  width: 100%;
+  box-sizing: border-box;
+}
 
-/* Dropdown menus (Learn/Build) — keep your existing HTML; style here if needed */
-.dropdown-content a{ color: var(--text) }
+/* Left (optional) */
+a { color: var(--brand); text-decoration: none; }
+a:hover { text-decoration: underline; }
 
-/* Theme button on light mode ensures contrast */
-body.light button{ color:#fff }
+/* Small badges or pills */
+.badge {
+Display: Inline block;
+  padding: 4px 8px;
+Border radius: 999px;
+  border: 1px solid var(--panel-edge);
+  background: rgba(255,255,255,0.08);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Utility spacing */
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
+.center { text-align: center; }
