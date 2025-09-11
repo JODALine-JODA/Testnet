@@ -5,6 +5,20 @@
  * - 25-language i18n support
  * - Wallet connect/disconnect, buy, approve, stake, live reads
  */
+// ---- Theme toggle (persisted) ----
+  const root = document.documentElement;
+  const themeBtn = document.getElementById('themeToggle');
+  const savedTheme = localStorage.getItem('theme') || 'light';  // start in light for your screenshot parity
+  root.setAttribute('data-theme', savedTheme);
+  if (themeBtn) themeBtn.textContent = savedTheme === 'light' ? '🌙 Light' : '☀️ Dark';
+
+  function toggleTheme() {
+    const now = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+    root.setAttribute('data-theme', now);
+    localStorage.setItem('theme', now);
+    if (themeBtn) themeBtn.textContent = now === 'light' ? '🌙 Light' : '☀️ Dark';
+  }
+  if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
 
 document.addEventListener('DOMContentLoaded', async() => {
 ------------------ Small DOM helpers ------------------
@@ -22,24 +36,7 @@ const banner = (msg, style = 'info') = > {
     statusEl.textContent = msg;
     statusEl.style.color = color;
   };
-
------------------- Theme (dark/light) ------------------
-  (function themeInit() {
-    const root = document.documentElement;
-    const btn = $('themeToggle');
-    const saved = localStorage.getItem('theme');
-    const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
-    const initial = saved || (prefersLight ? 'light' : 'dark');
-
-    apply(initial);
-
-    if (btn) {
-      btn.addEventListener('click', () => {
-        const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-        apply(next);
-      });
     }
-
     function apply(mode) {
       if (mode === 'light') root.setAttribute('data-theme', 'light');
 else root.removeAttribute('data-theme'); dark = default
