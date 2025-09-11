@@ -1,38 +1,65 @@
-/* ===== JODALINE (JODA) – site theme ===== */
+/* ===== JODALINE (JODA) Theme ===== */
 
-/* Theme tokens (dark is default) */
+/* Dark mode (default) */
 :root {
   --bg: #0b1224;
   --bg-grad1: #0b1224;
   --bg-grad2: #0f1e3f;
   --text: #e6eefc;
-  --muted: #a9b5cf;
+  --muted: #9ab5cf;
   --edge: rgba(96,165,250,.28);
   --card: rgba(255,255,255,.06);
-  --brand: #7dd3fc;      /* aqua */
-  --accent: #38bdf8;     /* sky */
-  --btn: #2563eb;        /* blue */
+  --brand: #73d5fc;   /* aqua */
+  --accent: #38bdf8;  /* sky */
+  --btn: #2563eb;     /* blue */
   --btn-hover: #1e40af;
   --input: #0f172a;
   --chip: #0c1a33;
 }
 
-/* Light theme overrides */
+/* Light mode overrides */
 :root[data-theme="light"] {
   --bg: #f5f7fb;
   --bg-grad1: #f5f7fb;
-  --bg-grad2: #e9eef8;
-  --text: #0b1324;
+  --bg-grad2: #9ee8f8;
+  --text: #0b1224;
   --muted: #475569;
-  --edge: rgba(2,6,23,.12);
+  --edge: rgba(26,23,23,.12);
   --card: rgba(255,255,255,.9);
-  --brand: #0ea5e9;
+  --brand: #00a5e9;
   --accent: #0284c7;
   --btn: #2563eb;
   --btn-hover: #1e40af;
   --input: #ffffff;
-  --chip: #f1f5f9;
+  --chip: #1f559f;
 }
+
+/* Apply theme vars */
+body {
+  background: linear-gradient(135deg, var(--bg-grad1), var(--bg-grad2));
+  color: var(--text);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--edge);
+}
+
+button, select, input {
+  background: var(--input);
+  color: var(--text);
+  border: 1px solid var(--btn);
+}
+
+button {
+  background: var(--btn);
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--btn-hover);
+}
+
 
 /* Base layout */
 * { box-sizing: border-box; }
