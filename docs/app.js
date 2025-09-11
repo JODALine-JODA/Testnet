@@ -1,404 +1,334 @@
-/* app.js — JODALINE (JODA) dApp core for BSC Testnet
- * - Requires ethers v6 loaded via CDN BEFORE this script
- * - Loads ABIs from local JSON files (JODA.json, JODASale.json, JODAStaking.json)
- * - Dark/Light theme toggle with persistence
- * - 25-language i18n support
- * - Wallet connect/disconnect, buy, approve, stake, live reads
- */
-// ---- Theme toggle (persisted) ----
-  const root = document.documentElement;
-  const themeBtn = document.getElementById('themeToggle');
-  const savedTheme = localStorage.getItem('theme') || 'light';  // start in light for your screenshot parity
-  root.setAttribute('data-theme', savedTheme);
-  if (themeBtn) themeBtn.textContent = savedTheme === 'light' ? '🌙 Light' : '☀️ Dark';
+/* app.js — JODALINE (JODA) dApp for BSC Testnet
+   - ethers v6 must load before this (two CDN tags in index.html)
+   - Wallet connect/disconnect
+   - Load ABIs (JODA.json, JODASale.json, JODAStaking.json)
+   - Buy (value in BNB), Approve, Stake
+   - Language + Theme toggle persistence
+   - Affiliate panel: referral link + “Go shopping” placeholder
+*/
 
-  function toggleTheme() {
+// ---------- Theme toggle ----------
+(function themeInit() {
+  const root = document.documentElement;
+  const btn = document.getElementById('themeToggle');
+  const saved = localStorage.getItem('theme') || 'dark';
+  root.setAttribute('data-theme', saved);
+  if (btn) btn.textContent = saved === 'light' ? '🌙 Dark' : '☀️ Light';
+  btn?.addEventListener('click', () => {
     const now = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
     root.setAttribute('data-theme', now);
     localStorage.setItem('theme', now);
-    if (themeBtn) themeBtn.textContent = now === 'light' ? '🌙 Light' : '☀️ Dark';
-  }
-  if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+    if (btn) btn.textContent = now === 'light' ? '🌙 Dark' : '☀️ Light';
+  });
+})();
 
-document.addEventListener('DOMContentLoaded', async() => {
------------------- Small DOM helpers ------------------
-  const $ = (id) => document.getElementById(id);
-const setText = (id, v) = > { const el = $(id); if (el) el.textContent = v; };
-  const on = (id, evt, fn) => { const el = $(id); if (el) el.addEventListener(evt, fn); };
-
-  const statusEl = $('status');
-const banner = (msg, style = 'info') = > {
-    if (!statusEl) return;
-    const color =
-      style === 'ok'   ? '#27c093' :
-      style === 'warn' ? '#e2b007' :
-      style === 'err'  ? '#ff4d4d' : '#6cb1ff';
-    statusEl.textContent = msg;
-    statusEl.style.color = color;
+document.addEventListener('DOMContentLoaded', async () => {
+  // ---------- Helpers ----------
+  const $  = (id) => document.getElementById(id);
+  const setText = (id, v) => { const el = $(id); if (el) el.textContent = v; };
+  const banner = (msg, style='info') => {
+    const el = $('status'); if (!el) return;
+    const c = { ok:'#27c093', warn:'#e2b007', err:'#ff4d4d', info:'#6cb1ff' }[style] || '#6cb1ff';
+    el.textContent = msg; el.style.color = c;
   };
-    }
-    function apply(mode) {
-      if (mode === 'light') root.setAttribute('data-theme', 'light');
-else root.removeAttribute('data-theme'); dark = default
-      localStorage.setItem('theme', mode);
-if (btn) btn.textContent = mode === 'light' ? 🌙 ' Dark' : ' ☀️ Light';
-    }
-  })();
 
------------------- Ethers presence check ------------------
-  if (typeof window.ethers === 'undefined') {
-    banner('Error: ethers.js not loaded (check CDN <script> in index.html).', 'err');
-    console.error('ethers.js not found. Ensure the two CDN tags are above app.js.');
+  if (!window.ethers) {
+    banner('Error: ethers.js not loaded. Refresh (Ctrl+F5).', 'err');
     return;
   }
 
------------------- i18n dictionary ------------------
+  // ---------- i18n (keep it lightweight; expand later) ----------
   const i18n = {
-en: { shopTitle:"Shop online • Get JODA back", shopLead:"Use JODALINE's shopping flow — every time you spend, you get rewarded back in JODA tokens.", buyTitle:"Buy JODA", stakeTitle:"Stake JODA", yourBalance:"Your Balances", saleStatus:"Sale Status", howWorks:"How it works", connected:"Connected to MetaMask", connect:"Connect Wallet", connectedShort:"Connected", notConnected:"Wallet detected — not connected", readonly:"Read-only" },
-    es: { shopTitle:"Compra online • Recibe JODA", shopLead:"Usa el flujo de compras de JODALINE — cada vez que gastas, recibes JODA.", buyTitle:"Comprar JODA", stakeTitle:"Apostar JODA", yourBalance:"Tus saldos", saleStatus:"Estado de venta", howWorks:"Cómo funciona", connected:"Conectado a MetaMask", connect:"Conectar Billetera", connectedShort:"Conectado", notConnected:"Billetera detectada — no conectada", readonly:"Solo lectura" },
-    fr: { shopTitle:"Achetez en ligne • Recevez du JODA", shopLead:"Avec JODALINE — chaque dépense vous récompense en JODA.", buyTitle:"Acheter JODA", stakeTitle:"Staker JODA", yourBalance:"Vos soldes", saleStatus:"Statut de vente", howWorks:"Comment ça marche", connected:"Connecté à MetaMask", connect:"Connecter le portefeuille", connectedShort:"Connecté", notConnected:"Portefeuille détecté — non connecté", readonly:"Lecture seule" },
-en: { shopTitle:"Shop online • Get JODA back", shopLead:"With JODALINE — every time you spend, you'll be rewarded in JODA.", buyTitle:"Buy JODA", stakeTitle:"JODA stake", yourBalance:"Your balances", saleStatus:"Sale status", howWorks:"How it works", connected:"Connected to MetaMask", connect:"Connect wallet", connectedShort:"Connected", notConnected:"Wallet detected — not connected", readonly:"Read only" },
-    it: { shopTitle:"Acquista online • Ottieni JODA", shopLead:"Con JODALINE — ogni spesa ti premia in JODA.", buyTitle:"Compra JODA", stakeTitle:"Metti in staking JODA", yourBalance:"I tuoi saldi", saleStatus:"Stato di vendita", howWorks:"Come funziona", connected:"Connesso a MetaMask", connect:"Connetti Wallet", connectedShort:"Connesso", notConnected:"Wallet rilevato — non connesso", readonly:"Sola lettura" },
-    pt: { shopTitle:"Compre online • Receba JODA", shopLead:"Com a JODALINE — sempre que gastar, recebe JODA.", buyTitle:"Comprar JODA", stakeTitle:"Fazer stake de JODA", yourBalance:"Seus saldos", saleStatus:"Status de venda", howWorks:"Como funciona", connected:"Conectado ao MetaMask", connect:"Conectar Carteira", connectedShort:"Conectado", notConnected:"Carteira detectada — não conectada", readonly:"Somente leitura" },
-ru: { shopTitle:"Покупайте онлайн • Получайте JODA", shopLead:"С JODALINE — за каждую покупку вы получаете токены JODA.", buyTitle:"Купить JODA", stakeTitle:"Стейкинг JODA", yourBalance:"Ваши балансы", saleStatus:"Статус продажи", howWorks:"Как это работает", connected:"Подключено к MetaMask", connect:"Подключить кошеть �лёк", connectedShort:"Подключено", notConnected:"Кошелёк найден — не подключен", readonly:"Только чтение" },
-uk: { shopTitle:"Купуйте онлайн • Отримуйте JODA", shopLead:"З JODALINE — за кожну витрату ви отримуєте JODA.", buyTitle:"Купити JODA", stakeTitle:"Стейкінг JODA", yourBalance:"Ваші баланси", saleStatus:"Статус продажу", howWorks:"Як це працює", connected:"Підключено до MetaMask", connect:"Підключити гаманец ь", connectedShort:"Підключено", notConnected:"Гаманець знайдено — не підключено", readonly:"Лише читання" },
-    sq: { shopTitle:"Bli online • Merr JODA", shopLead:"Me JODALINE — sa herë që shpenzon, shpërblehesh me JODA.", buyTitle:"Bli JODA", stakeTitle:"Stake JODA", yourBalance:"Saldot e tua", saleStatus:"Statusi i shitjes", howWorks:"Si funksionon", connected:"Lidhur me MetaMask", connect:"Lidhu me Portofolin", connectedShort:"Lidhur", notConnected:"Portofoli u gjet — jo i lidhur", readonly:"Vetëm lexim" },
-tr: { shopTitle:"Çevrimiçi alışveriş • JODA kazan", shopLead:"JODALINE ile — her harcamada JODA ile ödüllendirilirsin.", buyTitle:"JODA Satın Al", stakeTitle:"JODA Stake Et", yourBalance:"Bakiyelerin", saleStatus:"Satış Durumu", howWorks:"Nasıl çalışır", connected:"MetaMask'e bağlandı", connect:"Cüzdanı Bağla", connectedShort:"Bağlandı", notConnected:"Cüzdan algılandı — bağlı değil", readonly:"Salt okunur" },
-    ar: { shopTitle:"تسوّق عبر الإنترنت • احصل على JODA", shopLead:"مع JODALINE — في كل مرة تنفق فيها، تكافأ برموز JODA.", buyTitle:"شراء JODA", stakeTitle:"تكديس JODA", yourBalance:"أرصدةك", saleStatus:"حالة البيع", howWorks:"كيف تعمل", connected:"متصل بـ MetaMask", connect:"اتصل بالمحفظة", connectedShort:"متصل", notConnected:"تم اكتشاف محفظة — غير متصل", readonly:"قراءة فقط" },
-fa: { shopTitle:"آنلاین خرید کنید • JODA بگیرید", shopLead:"با JODALINE — هر بار که خرج می کنید، با توکن های JODA پاداش می گیرید.", buyTitle:"خرید JODA", stakeTitle:"استیک کردن JODA", yourBalance:"موجودی های شما", saleStatus:"وضعیت فروش", howWorks:"چطور کار می کند", connected:"به MetaMask متصل شد", connect:"اتصال کیف پول", connectedShort:"متصل", notConnected:"کیف پول شناسایی شد — متصل نیست", readonly:"فقط خواندنی" },
-hi: { shopTitle:"ऑनलाइन खरीदें • JODA पाएं", shopLead:"JODALINE के साथ — हर खर्च पर JODA टोकन मिलते हैं.", buyTitle:"JODA खरीदें", stakeTitle:"JODA स्टेक करें", yourBalance:"आपके बैलेंस", saleStatus:"सेल स्टेटस", howWorks:"कैसे काम करता है", connected:"MetaMask से कनेक्टेड", connect:"वॉलेट कनेक्ट कर ें", connectedShort:"कनेक्टेड", notConnected:"वॉलेट मिला — कनेक्ट नहीं", readonly:"केवल-पढ़ने के लिए" },
-ur: { shopTitle:"آن لائن خریدیں • JODA حاصل کریں", shopLead:"JODALINE کے ساتھ — ہر خرچ پر JODA ٹوکن ملتے ہیں.", buyTitle:"JODA خریدیں", stakeTitle:"JODA اسٹیک کریں", yourBalance:""JODA اسٹیک کریں", yourBalance:"آپ کے بیلنس", saleStatus:"سیل اسٹیٹس", howWorks:"یہ کیسے کام کرتا ہے", connected:"MetaMask سے منسلک", connect:"والیٹ کنیکٹ کریں", connectedShort:"منسلک", notConnected:"والیٹ ملا — کنیکٹ نہیں", readonly:"صرف مطالعہ" },
-zh: { shopTitle:"线上购物 • 返还 JODA", shopLead:"使用 JODALINE — 每次消费都可获得 JODA 代币奖励。 ", buyTitle:"购买 JODA", stakeTitle:"质押 JODA", yourBalance:"你的余额", saleStatus:"销售状态", howWorks:"如何运作", connected:"已连接 MetaMask", connect:"连接钱包", connectedShort:"已连接", notConnected:"检测到钱包 — 未连接", readonly:"只读" },
-ja: { shopTitle:"オンラインで購入 • JODAを受け取る", shopLead:"JODALINE では支出のたびにJODAトークンで報酬。 ", buyTitle:"JODAを購入", stakeTitle:"JODAをステーキング", yourBalance:"残高", saleStatus:"販売状況", howWorks:"使い方", connected:"MetaMask に接続中", connect:"ウォレット接続", connectedShort:"接続済み", notConnected:"ウォレット検出 — 未接続", readonly:"読み取り専用" },
-    ko: { shopTitle:"온라인 쇼핑 • JODA 받기", shopLead:"JODALINE — 지출할 때마다 JODA로 보상.", buyTitle:"JODA 구매", stakeTitle:"JODA 스테이킹", yourBalance:"내 잔액", saleStatus:"판매 상태", howWorks:"작동 방식", connected:"MetaMask 연결됨", connect:"지갑 연결", connectedShort:"연결됨", notConnected:"지갑 감지 — 미연결", readonly:"읽기 전용" },
-    sw: { shopTitle:"Nunua mtandaoni • Pata JODA", shopLead:"Ukitumia JODALINE — kila unapotumia, unazawadiwa JODA.", buyTitle:"Nunua JODA", stakeTitle:"Weka JODA kama dau", yourBalance:"Salio lako", saleStatus:"Hali ya mauzo", howWorks:"Jinsi inavyofanya kazi", connected:"Imeunganishwa na MetaMask", connect:"Unganisha Wallet", connectedShort:"Imeunganishwa", notConnected:"Wallet imegunduliwa — haijaunganishwa", readonly:"Kusoma tu" },
-    am: { shopTitle:"በመስመር ላይ ይግዙ • የJODA ይቀበሉ", shopLead:"በJODALINE — ሁሉን ጊዜ ሲወጡ በJODA ታሳለፋሉ።", buyTitle:"JODA ይግዙ", stakeTitle:"JODA ይስታኩ", yourBalance:"ሂሳብዎ", saleStatus:"የሽያጭ ሁኔታ", howWorks:"እንዴት እንደሚሰራ", connected:"ከMetaMask ጋር ተገናኝቷል", connect:"ዋሌት አገናኝ", connectedShort:"ተገናኝቷል", notConnected:"ዋሌት ተገኘ — አልተገናኘም", readonly:"ንባብ ብቻ" },
-yo: { shopTitle:"" Ra lori ayelujara • Gba JODA", shopLead:"Pẹlu JODALINE — gbogbo inawo ni ere JODA.", buyTitle:"Ra JODA", stakeTitle:"Fi JODA sílẹ̀", yourBalance:"Awọn ìdọ́gba rẹ", saleStatus:"Ipo tita", howWorks:"Bí ó ṣe ń ṣiṣẹ́", connected:"Asopọ sí MetaMask", connect:"So àpamọ́ pọ̀", connectedShort:"Ti sopọ̀", notConnected:"Àpamọ́ rí — kò sopọ̀", readonly:"Kíkà nìkan" },
-ha: { shopTitle:"Siyan kaya a yanar gizo • Samu JODA", shopLead:"Tare da JODALINE — duk lokacin da ka kashe kudi, ana ba ka JODA.", buyTitle:"Sayi JODA", stakeTitle:"Ajiye JODA", yourBalance:"Ma'auni naka", saleStatus:"Matsayin sayarwa", howWorks:"Yadda yake aiki", connected:"An haɗa da MetaMask", connect:"Haɗa Wallet", connectedShort:"An haɗa", notConnected:"An gano Wallet — ba a haɗa ba", readonly:"Karatu kawai" },
-    pl: { shopTitle:"Kupuj online • Odbieraj JODA", shopLead:"Z JODALINE — za każdy wydatek otrzymujesz JODA.", buyTitle:"Kup JODA", stakeTitle:"Stakuj JODA", yourBalance:"Twoje salda", saleStatus:"Status sprzedaży", howWorks:"Jak to działa", connected:"Połączono z MetaMask", connect:"Połącz portfel", connectedShort:"Połączono", notConnected:"Wykryto portfel — nie połączono", readonly:"Tylko do odczytu" },
-    el: { shopTitle:"Αγοράστε online • Κερδίστε JODA", shopLead:"Με το JODALINE — κάθε δαπάνη σας ανταμείβεται με JODA.", buyTitle:"Αγορά JODA", stakeTitle:"Stake JODA", yourBalance:"Υπόλοιπά σας", saleStatus:"Κατάσταση πώλησης", howWorks:"Πώς λειτουργεί", connected:"Συνδέθηκε με MetaMask", connect:"Συνδέστε πορτοφόλι", connectedShort:"Συνδέθηκε", notConnected:"Βρέθηκε πορτοφόλι — μη συνδεδεμένο", readonly:"Μόνο ανάγνωση" },
-    nl: { shopTitle:"Online winkelen • Ontvang JODA", shopLead:"Met JODALINE — elke uitgave wordt beloond met JODA-tokens.", buyTitle:"JODA kopen", stakeTitle:"JODA staken", yourBalance:"Je saldi", saleStatus:"Verkoopstatus", howWorks:"Hoe het werkt", connected:"Verbonden met MetaMask", connect:"Wallet verbinden", connectedShort:"Verbonden", notConnected:"Wallet gedetecteerd — niet verbonden", readonly:"Alleen-lezen" },
-ro: { shopTitle:"Cumpără online • Primește JODA", shopLead:"Cu JODALINE — pentru fiecare cheltuială ești răsplătit în JODA.", buyTitle:"Cumpără JODA", stakeTitle:"Stake JODA", yourBalance:"Soldurile tale", saleStatus:"Starea vânzării", howWorks:"funcționează", connected:"Conectat la MetaMask", connect:"Conectează portofelul", connectedShort:"Conectat", notConnected:"Portofel detectat — neconectat", readonly:"Doar citire" },
+    en:{ connect:'Connect Wallet', connected:'Connected to MetaMask',
+        shopTitle:'Shop online • Get JODA back',
+        buyTitle:'Buy JODA', stakeTitle:'Stake JODA',
+        yourBalance:'Your Balances', saleStatus:'Sale Status',
+        how:'How it works', reg:'Register', login:'Login' },
+    de:{ connect:'Wallet verbinden', connected:'Mit MetaMask verbunden',
+        shopTitle:'Online einkaufen • JODA zurück',
+        buyTitle:'JODA kaufen', stakeTitle:'JODA staken',
+        yourBalance:'Deine Guthaben', saleStatus:'Verkaufsstatus',
+        how:'So funktioniert es', reg:'Registrieren', login:'Anmelden' },
+    fr:{ connect:'Connecter le portefeuille', connected:'Connecté à MetaMask',
+        shopTitle:'Achetez en ligne • Recevez JODA',
+        buyTitle:'Acheter JODA', stakeTitle:'Staker JODA',
+        yourBalance:'Vos soldes', saleStatus:'Statut de vente',
+        how:'Comment ça marche', reg:'Créer un compte', login:'Se connecter' },
   };
-
-  function setLang(lang) {
+  function applyLang(lang) {
     const d = i18n[lang] || i18n.en;
     setText('shopTitle', d.shopTitle);
-    setText('shopLead',  d.shopLead);
-    setText('buyTitle',  d.buyTitle);
-    setText('stakeTitle',d.stakeTitle);
+    setText('buyTitle', d.buyTitle);
+    setText('stakeTitle', d.stakeTitle);
     setText('balanceTitle', d.yourBalance);
     setText('saleStatusTitle', d.saleStatus);
-    setText('howTitle',  d.howWorks);
-    const connectBtn = $('connectBtn');
-    if (connectBtn) connectBtn.textContent = accounts.length ? d.connectedShort : d.connect;
-    const state = $('walletState');
-    if (state) state.textContent = accounts.length ? d.connected : (window.ethereum ? d.notConnected : d.readonly);
+    setText('howTitle', d.how);
+    const btn = $('connectBtn');
+    if (btn) btn.textContent = accounts.length ? d.connected : d.connect;
+    const regBtn = $('regBtn'), loginBtn = $('loginBtn');
+    if (regBtn) regBtn.textContent = d.reg;
+    if (loginBtn) loginBtn.textContent = d.login;
     localStorage.setItem('lang', lang);
   }
-
   const savedLang = localStorage.getItem('lang') || 'en';
-  setLang(savedLang);
-  on('languageSelector', 'change', (e) => setLang(e.target.value));
+  applyLang(savedLang);
+  $('languageSelector')?.addEventListener('change', e => applyLang(e.target.value));
 
------------------- Chain config (BSC Testnet) ------------------
-  const BSC_TESTNET_ID = 97;
-  const BSC_TESTNET_PARAMS = {
-    chainId: '0x61',
-    chainName: 'BSC Testnet',
-    nativeCurrency: { name: 'BNB', symbol: 'tBNB', decimals: 18 },
-    rpcUrls: ['https://data-seed-prebsc-1-s1.binance.org:8545/'],
-    blockExplorerUrls: ['https://testnet.bscscan.com/'],
-  };
-
------------------- Addresses (latest you provided) ------------------
+  // ---------- Chain / addresses ----------
+  const BSC = { id: 97, hex: '0x61',
+    rpc: 'https://data-seed-prebsc-1-s1.binance.org:8545/',
+    exp: 'https://testnet.bscscan.com/' };
   const ADDR = {
     TOKEN:   '0xB2EFA488040B036E50A18C9d2D8110AF743c5504',
     SALE:    '0x9146aEE05EbCFD30950D4E964cE256e32E1CbcfD',
     STAKING: '0xEe5eF7b0140a061032613F157c8366D5a29ABB95',
   };
 
-------------------State------------------
-let provider = null; ethers. BrowserProvider or ethers. JsonRpcProvider
-let signer = null; ethers. Signer (when connected)
-  let accounts = [];
-  let token = null, sale = null, staking = null;
-  let abiToken = null, abiSale = null, abiStaking = null;
+  // ---------- State ----------
+  let provider, signer, accounts = [];
+  let token, sale, staking;
+  let abiToken, abiSale, abiStaking;
 
------------------- UI elements ------------------
-  const connectBtn = $('connectBtn');
-  const disconnectBtn = $('disconnectBtn');
-  const buyInput = $('buyAmount') || $('buyBNB');
-  const buyBtn   = $('buyBtn');
-
-  const stakeAmount = $('stakeAmount');
-  const stakeMonths = $('stakeMonths');
-  const approveBtn  = $('approveBtn');
-  const stakeBtn    = $('stakeBtn');
-
-  const saleActiveEl = $('saleActive');
-  const saleMinEl    = $('saleMin');
-  const saleRateEl   = $('saleRate');
-  const saleAvailEl  = $('saleAvail');
-
-  const balBNBEl     = $('balanceBNB');
-  const balJODAEl    = $('balanceJODA');
-
-  const addrUserEl   = $('addrUser');
-  const addrStakingEl= $('addrStaking');
-  const addrSaleEl   = $('addrSale');
-
------------------- Init flow ------------------
-  try {
-    banner('Detecting wallet...');
-    await loadABIs();
-    await chooseProvider();
-    await buildContracts();
-    paintAddresses();
-    paintConnectionBadge();
-    wireUI();
-    await fullRefresh();
-    startAutoRefresh();
-} catch(e) {
-    console.error(e);
-banner('Init error: ${e.message || e}', 'err');
-  }
-
------------------- Load ABIs ------------------
+  // ---------- ABIs ----------
   async function loadABIs() {
-const fetchJSON = async(path) => (await fetch(path)).json();
+    const j = async p => (await fetch(p)).json();
     [abiToken, abiSale, abiStaking] = await Promise.all([
-      fetchJSON('JODA.json'),
-      fetchJSON('JODASale.json'),
-      fetchJSON('JODAStaking.json'),
+      j('JODA.json'), j('JODASale.json'), j('JODAStaking.json')
     ]);
   }
 
------------------- Provider selection ------------------
+  // ---------- Provider ----------
   async function chooseProvider() {
-    const hasMM = typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask;
-    if (hasMM) {
-provider = new ethers. BrowserProvider(window.ethereum, 'any');
+    if (window.ethereum) {
+      provider = new ethers.BrowserProvider(window.ethereum, 'any');
       const net = await provider.getNetwork();
-      if (Number(net.chainId) !== BSC_TESTNET_ID) {
-        banner('Wrong network. Switching to BSC Testnet...', 'warn');
+      if (Number(net.chainId) !== BSC.id) {
         try {
           await window.ethereum.request({
             method: 'wallet_switchEthereumChain',
-            params: [{ chainId: BSC_TESTNET_PARAMS.chainId }],
+            params: [{ chainId: BSC.hex }]
           });
-        } catch (err) {
-          if (err.code === 4902) {
+        } catch (e) {
+          if (e.code === 4902) {
             await window.ethereum.request({
               method: 'wallet_addEthereumChain',
-              params: [BSC_TESTNET_PARAMS],
+              params: [{
+                chainId: BSC.hex,
+                chainName: 'BSC Testnet',
+                nativeCurrency: { name:'BNB', symbol:'tBNB', decimals:18 },
+                rpcUrls: [BSC.rpc],
+                blockExplorerUrls: [BSC.exp],
+              }]
             });
-          } else {
-            throw err;
-          }
+          } else { throw e; }
         }
       }
       banner('MetaMask detected', 'ok');
     } else {
-provider = new ethers. JsonRpcProvider(BSC_TESTNET_PARAMS.rpcUrls[0]);
-      banner(i18n[savedLang].readonly || 'Read-only mode', 'warn');
+      provider = new ethers.JsonRpcProvider(BSC.rpc);
+      banner('Read-only mode (no wallet)', 'warn');
     }
   }
 
------------------- Contracts ------------------
+  // ---------- Contracts ----------
   async function buildContracts() {
-token = new ethers. Contract(ADDR. TOKEN, abiToken, provider);
-sale = new ethers. Contract(ADDR. SALE, abiSale, provider);
-Staking = New Ethers. Contract(ADDR. STAKING, abiStaking, provider);
+    token   = new ethers.Contract(ADDR.TOKEN,   abiToken,   provider);
+    sale    = new ethers.Contract(ADDR.SALE,    abiSale,    provider);
+    staking = new ethers.Contract(ADDR.STAKING, abiStaking, provider);
   }
   function withSigner() {
-    if (!signer) throw new Error('Connect wallet first.');
-    token   = token.connect(signer);
-    sale    = sale.connect(signer);
+    if (!signer) throw new Error('Connect wallet first');
+    token = token.connect(signer);
+    sale = sale.connect(signer);
     staking = staking.connect(signer);
   }
 
------------------- UI wiring ------------------
-  function wireUI() {
-    if (connectBtn) {
-connectBtn.addEventListener('click', async() => {
-        try {
-          if (!window.ethereum) return banner('No wallet provider found.', 'err');
-          banner('Connecting...');
-          accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-          signer = await provider.getSigner();
-          withSigner();
-          paintAddresses();
-          paintConnectionBadge(true);
-          banner(i18n[savedLang].connected || 'Connected to MetaMask', 'ok');
-          await fullRefresh();
-} catch(e) {
-          console.error(e);
-          banner(e.message || 'Connection failed', 'err');
-        }
-      });
+  // ---------- UI wiring ----------
+  const connectBtn = $('connectBtn');
+  const disconnectBtn = $('disconnectBtn');
+  connectBtn?.addEventListener('click', async () => {
+    try {
+      accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      signer = await provider.getSigner();
+      withSigner();
+      applyLang(localStorage.getItem('lang') || 'en');
+      banner('Connected to MetaMask', 'ok');
+      paintAddresses();
+      refreshAll();
+    } catch (e) {
+      console.error(e);
+      banner('Connection failed', 'err');
     }
+  });
+  disconnectBtn?.addEventListener('click', () => {
+    signer = null; accounts = [];
+    buildContracts(); // back to read-only
+    banner('Disconnected (UI only)', 'warn');
+    paintAddresses();
+  });
 
-    if (disconnectBtn) {
-      disconnectBtn.addEventListener('click', () => {
-        signer = null;
-        accounts = [];
-buildContracts(); back to read-only instances
-        paintConnectionBadge(false);
-        banner('Disconnected (UI only)', 'warn');
-      });
+  // BUY
+  $('buyBtn')?.addEventListener('click', async () => {
+    try {
+      if (!signer) throw new Error('Connect wallet first');
+      withSigner();
+      const bnb = ( $('buyAmount')?.value || '0' ).trim();
+      if (!bnb || Number(bnb) <= 0) throw new Error('Enter BNB amount');
+      const tx = await sale.buy({ value: ethers.parseEther(bnb) });
+      banner('Buying… awaiting confirmation');
+      await tx.wait();
+      banner('Buy confirmed', 'ok');
+      refreshAll();
+    } catch (e) {
+      console.error(e);
+      banner(e.shortMessage || e.message || 'Buy failed', 'err');
     }
+  });
 
-    if (buyBtn && buyInput) {
-buyBtn.addEventListener('click', async() => {
-        try {
-          if (!signer) throw new Error('Connect wallet first.');
-          withSigner();
-const bnb = (buyInput.value || '0').trim(); amount in BNB
-          if (!bnb || Number(bnb) <= 0) throw new Error('Enter BNB amount.');
-          const value = ethers.parseEther(bnb);
-          const tx = await sale.buy({ value });
-          banner('Buying... awaiting confirmation');
-          await tx.wait();
-          banner('Buy confirmed', 'ok');
-          await fullRefresh();
-} catch(e) {
-          console.error(e);
-          banner(e.shortMessage || e.message || 'Buy failed', 'err');
-        }
-      });
+  // APPROVE then STAKE
+  $('approveBtn')?.addEventListener('click', async () => {
+    try {
+      if (!signer) throw new Error('Connect wallet first');
+      withSigner();
+      const amt = ( $('stakeAmount')?.value || '' ).trim();
+      const dec = await token.decimals();
+      const wei = ethers.parseUnits(amt || '0', dec);
+      if (wei <= 0n) throw new Error('Enter amount');
+      const tx = await token.approve(ADDR.STAKING, wei);
+      banner('Approving…');
+      await tx.wait();
+      banner('Approved', 'ok');
+    } catch (e) {
+      console.error(e);
+      banner(e.shortMessage || e.message || 'Approve failed', 'err');
     }
-
-    if (approveBtn && stakeAmount) {
-approveBtn.addEventListener('click', async() => {
-        try {
-          if (!signer) throw new Error('Connect wallet first.');
-          withSigner();
-          const amt = (stakeAmount.value || '').trim();
-          if (!amt || Number(amt) <= 0) throw new Error('Enter JODA amount.');
-          const dec = await token.decimals();
-          const weiAmt = ethers.parseUnits(amt, dec);
-const tx = await token.approve(ADDR. STAKING, white);
-          banner('Approving...', 'info');
-          await tx.wait();
-          banner('Approved', 'ok');
-} catch(e) {
-          console.error(e);
-          banner(e.shortMessage || e.message || 'Approve failed', 'err');
-        }
-      });
+  });
+  $('stakeBtn')?.addEventListener('click', async () => {
+    try {
+      if (!signer) throw new Error('Connect wallet first');
+      withSigner();
+      const amt = ( $('stakeAmount')?.value || '' ).trim();
+      const months = Number( $('stakeMonths')?.value || '0' );
+      if (![3,6,12,24,36].includes(months)) throw new Error('Pick 3/6/12/24/36 months');
+      const dec = await token.decimals();
+      const wei = ethers.parseUnits(amt || '0', dec);
+      if (wei <= 0n) throw new Error('Enter amount');
+      const tx = await staking.stake(wei, months);
+      banner('Staking… awaiting confirmation');
+      await tx.wait();
+      banner('Stake confirmed', 'ok');
+      refreshAll();
+    } catch (e) {
+      console.error(e);
+      banner(e.shortMessage || e.message || 'Stake failed', 'err');
     }
+  });
 
-    if (stakeBtn && stakeAmount && stakeMonths) {
-stakeBtn.addEventListener('click', async() => {
-        try {
-          if (!signer) throw new Error('Connect wallet first.');
-          withSigner();
-          const amt = (stakeAmount.value || '').trim();
-          const months = Number(stakeMonths.value || '0');
-          if (!amt || Number(amt) <= 0) throw new Error('Enter JODA amount.');
-if (![ 3,6,12,24,36].includes(months)) throw new Error('Pick a valid lockup (3, 6, 12, 24, 36).');
-          const dec = await token.decimals();
-          const weiAmt = ethers.parseUnits(amt, dec);
-          const tx = await staking.stake(weiAmt, months);
-          banner('Staking... awaiting confirmation', 'info');
-          await tx.wait();
-          banner('Stake confirmed', 'ok');
-          await fullRefresh();
-} catch(e) {
-          console.error(e);
-          banner(e.shortMessage || e.message || 'Stake failed', 'err');
-        }
-      });
-    }
-
-Wallet events
-    if (window.ethereum) {
-window.ethereum.on?. ('accountsChanged', async (accs) => {
-        accounts = accs || [];
-        signer = accounts.length ? await provider.getSigner() : null;
-        if (signer) withSigner(); else await buildContracts();
-        paintAddresses();
-paintConnectionBadge(!! signer);
-        await fullRefresh();
-      });
-window.ethereum.on?. ('chainChanged', async() => {
-        try {
-provider = new ethers. BrowserProvider(window.ethereum, 'any');
-          signer = accounts.length ? await provider.getSigner() : null;
-          await buildContracts();
-          if (signer) withSigner();
-          await fullRefresh();
-        } catch (e) { console.error(e); }
-      });
-    }
-  }
-
-------------------Painters------------------
-function paintConnectionBadge(connected = !! signer) {
-    const d = i18n[localStorage.getItem('lang') || 'en'] || i18n.en;
-    const btn = $('connectBtn');
-    if (btn) btn.textContent = connected ? (d.connectedShort || 'Connected') : (d.connect || 'Connect Wallet');
-    setText('walletState',
-Connected? (d.connected || 'Connected to MetaMask'):
-      (window.ethereum ? (d.notConnected || 'Wallet detected — not connected') : (d.readonly || 'Read-only'))
-    );
-  }
-
+  // ---------- Affiliate / Referral ----------
   function paintAddresses() {
-    if (addrUserEl)   addrUserEl.value = accounts[0] || '';
-if (addrStakingEl)addrStakingEl.value = ADDR. STAKING;
-if (addrSaleEl) addrSaleEl.value = ADDR. SALE;
+    const me = accounts[0] || '';
+    const addrUser = $('addrUser'); if (addrUser) addrUser.value = me;
+    const addrSale = $('addrSale'); if (addrSale) addrSale.value = ADDR.SALE;
+    const addrSt  = $('addrStaking'); if (addrSt) addrSt.value = ADDR.STAKING;
 
-Optional referral link box
-    const linkBox = $('refLink'), copyBtn = $('copyRef');
-    if (linkBox) {
-      const base = 'https://buy-joda.link/?ref=';
-      linkBox.value = base + (accounts[0] || 'your-wallet');
-      if (copyBtn) {
-copyBtn.onclick = async() = > {
-          try { await navigator.clipboard.writeText(linkBox.value); copyBtn.textContent='Copied'; setTimeout(()=>copyBtn.textContent='Copy',1200); } catch {}
-        };
-      }
-    }
+    const link = $('refLink');
+    const base = 'https://buy-joda.link/?ref=';
+    if (link) link.value = base + (me || 'your-wallet');
   }
+  $('copyRef')?.addEventListener('click', async () => {
+    try {
+      const v = $('refLink')?.value || '';
+      await navigator.clipboard.writeText(v);
+      $('copyRef').textContent = 'Copied';
+      setTimeout(()=> $('copyRef').textContent='Copy', 1200);
+    } catch {}
+  });
+  $('goShop')?.addEventListener('click', () => {
+    // Placeholder: you can replace with your “authorized partners” page
+    alert('Shopping hub coming soon: only authorized stores will open from here.');
+  });
 
-------------------Reads------------------
+  // ---------- Register / Login (client-side only) ----------
+  $('regBtn')?.addEventListener('click', () => {
+    const name = ($('regName')?.value || '').trim();
+    const email = ($('regEmail')?.value || '').trim();
+    if (!name || !email || !email.includes('@')) {
+      return banner('Enter a valid name & email to register', 'warn');
+    }
+    localStorage.setItem('joda_user', JSON.stringify({ name, email, created: Date.now() }));
+    banner('Registered (local) — confirmation email flow will come later.', 'ok');
+  });
+
+  $('loginBtn')?.addEventListener('click', () => {
+    const email = ($('loginEmail')?.value || '').trim();
+    const saved = JSON.parse(localStorage.getItem('joda_user') || '{}');
+    if (!email || !saved.email || saved.email !== email) {
+      return banner('Login failed (demo). Register first.', 'err');
+    }
+    banner(`Logged in as ${saved.name}`, 'ok');
+  });
+
+  // ---------- Reads ----------
   async function refreshSale() {
     try {
-const active = await sale.saleActive?. ();
-const minBuy = await sale.minBuy?. (); in wei
-const perBNB = await sale.tokensPerBNB?. (); token-wei per 1 BNB
-const avail = await sale.availableTokens?. ();
-      let dec = 18;
-      try { dec = await token.decimals(); } catch {}
-
-      if (saleActiveEl) saleActiveEl.textContent = active ? 'Yes' : 'No';
-      if (saleMinEl)    saleMinEl.textContent    = minBuy ? ethers.formatEther(minBuy) : '--';
-      if (saleRateEl)   saleRateEl.textContent   = perBNB ? Number(ethers.formatUnits(perBNB, dec)).toLocaleString() : '--';
-      if (saleAvailEl)  saleAvailEl.textContent  = avail ? Number(ethers.formatUnits(avail, dec)).toLocaleString() : '--';
-} catch(e) { console.warn('refreshSale()', e); }
+      const active = await sale.saleActive?.();
+      const minBuy = await sale.minBuy?.();
+      const perBNB = await sale.tokensPerBNB?.();
+      const avail  = await sale.availableTokens?.();
+      let dec = 18; try { dec = await token.decimals(); } catch {}
+      setText('saleActive', active ? 'Yes' : 'No');
+      setText('saleMin', minBuy ? ethers.formatEther(minBuy) : '--');
+      setText('saleRate', perBNB ? Number(ethers.formatUnits(perBNB, dec)).toLocaleString() : '--');
+      setText('saleAvail', avail ? Number(ethers.formatUnits(avail, dec)).toLocaleString() : '--');
+    } catch (e) { /* silent */ }
   }
-
   async function refreshBalances() {
     try {
-const who = signer ? await signer.getAddress(): null;
-      if (balBNBEl && who) {
-        const bal = await provider.getBalance(who);
-        balBNBEl.textContent = Number(ethers.formatEther(bal)).toLocaleString();
-      }
-      if (balJODAEl && who) {
-        const dec = await token.decimals();
-        const raw = await token.balanceOf(who);
-        balJODAEl.textContent = Number(ethers.formatUnits(raw, dec)).toLocaleString(undefined, { maximumFractionDigits: 9 });
-      }
-} catch(e) { console.warn('refreshBalances()', e); }
+      if (!signer) return;
+      const me = await signer.getAddress();
+      const bnb = await provider.getBalance(me);
+      setText('balanceBNB', Number(ethers.formatEther(bnb)).toLocaleString());
+      const dec = await token.decimals();
+      const raw = await token.balanceOf(me);
+      setText('balanceJODA', Number(ethers.formatUnits(raw, dec)).toLocaleString(undefined, { maximumFractionDigits: 6 }));
+    } catch {}
   }
-
-  async function fullRefresh() {
+  async function refreshAll() {
+    paintAddresses();
     await Promise.all([refreshSale(), refreshBalances()]);
   }
-  function startAutoRefresh() {
+
+  // ---------- Wallet events ----------
+  if (window.ethereum) {
+    window.ethereum.on?.('accountsChanged', async (accs) => {
+      accounts = accs || [];
+      signer = accounts.length ? await provider.getSigner() : null;
+      if (signer) withSigner(); else await buildContracts();
+      paintAddresses();
+      refreshAll();
+    });
+    window.ethereum.on?.('chainChanged', async () => {
+      provider = new ethers.BrowserProvider(window.ethereum, 'any');
+      signer = accounts.length ? await provider.getSigner() : null;
+      await buildContracts();
+      if (signer) withSigner();
+      refreshAll();
+    });
+  }
+
+  // ---------- Init ----------
+  try {
+    banner('Initializing…');
+    await loadABIs();
+    await chooseProvider();
+    await buildContracts();
+    paintAddresses();
+    banner('Ready', 'ok');
+    refreshAll();
     setInterval(refreshBalances, 20000);
+  } catch (e) {
+    console.error(e);
+    banner('Init failed', 'err');
   }
 });
+
