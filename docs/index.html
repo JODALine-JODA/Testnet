@@ -2,9 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>JODALINE (JODA) • Buy & Stake</title>
+  <title>JODALINE (JODA) • Buy & Stake (BSC Testnet)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* minimal safety styles in case styles.css is missing */
+    :root{--edge:rgba(96,165,250,.35)}
+    body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:linear-gradient(135deg,#0a192f,#1e3a8a);color:#fff}
+    header{display:flex;align-items:center;gap:12px;justify-content:center;padding:16px 20px;background:rgba(0,0,0,.25);border-bottom:1px solid var(--edge)}
+    header img{height:40px;width:auto}
+    .brand-title{font-weight:800;letter-spacing:.3px;color:#93c5fd}
+    .brand-ticker{color:#bcd2ff;font-size:.9em;margin-left:6px}
+    .topbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;margin:12px 0}
+    select,button,input{background:#0f172a;color:#fff;border:1px solid #2563eb;border-radius:8px;padding:10px 14px;font-size:14px}
+    button{background:#2563eb;cursor:pointer} button:hover{background:#1e40af}
+    #status{margin:8px auto 16px;text-align:center;color:#9ca3af;max-width:950px}
+    section{max-width:980px;margin:0 auto;padding:0 16px 40px}
+    h1,h2,h3{margin:.5em 0}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    @media (max-width:900px){.row{grid-template-columns:1fr}}
+    .card{background:rgba(255,255,255,.06);border:1px solid var(--edge);border-radius:12px;padding:16px}
+    .kv{display:flex;justify-content:space-between;gap:12px;margin:6px 0}
+    .muted{color:#9ca3af}
+    input[type="number"]{width:100%;box-sizing:border-box}
+    .addr{width:100%}
+  </style>
+
   <!-- ethers v6 (two CDNs), then your app -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js" defer></script>
   <script src="https://unpkg.com/ethers@6.13.2/dist/ethers.umd.min.js" defer></script>
@@ -20,40 +43,104 @@
     <label for="languageSelector">🌍</label>
     <select id="languageSelector">
       <option value="en">English</option>
-      <!-- (others optional) -->
+      <option value="es">Español (Spanish)</option>
+      <option value="fr">Français (French)</option>
+      <option value="de">Deutsch (German)</option>
+      <option value="it">Italiano (Italian)</option>
+      <option value="pt">Português (Portuguese)</option>
+      <option value="ru">Русский (Russian)</option>
+      <option value="uk">Українська (Ukrainian)</option>
+      <option value="sq">Shqip (Albanian)</option>
+      <option value="tr">Türkçe (Turkish)</option>
+      <option value="ar">العربية (Arabic)</option>
+      <option value="fa">فارسی (Farsi)</option>
+      <option value="hi">हिन्दी (Hindi)</option>
+      <option value="ur">اردو (Urdu)</option>
+      <option value="zh">中文 (Chinese)</option>
+      <option value="ja">日本語 (Japanese)</option>
+      <option value="ko">한국어 (Korean)</option>
+      <option value="sw">Kiswahili (Swahili)</option>
+      <option value="am">አማርኛ (Amharic)</option>
+      <option value="yo">Yorùbá (Yoruba)</option>
+      <option value="ha">Hausa</option>
+      <option value="pl">Polski (Polish)</option>
+      <option value="el">Ελληνικά (Greek)</option>
+      <option value="nl">Nederlands (Dutch)</option>
+      <option value="ro">Română (Romanian)</option>
     </select>
+
     <button id="connectBtn">🔗 Connect Wallet</button>
+    <button id="disconnectBtn">🚪 Disconnect</button>
+    <span id="walletState" class="muted"></span>
   </div>
 
   <div id="status">Connecting...</div>
 
   <section>
+    <!-- HERO / How it works -->
     <h1 id="shopTitle">Shop online • Get JODA back</h1>
-    <p id="shopLead">Use JODALINE’s shopping flow…</p>
+    <p id="shopLead" class="muted">
+      Use JODALINE’s shopping flow — every time you spend, you get rewarded back in JODA tokens.
+    </p>
 
-    <h2 id="buyTitle">Buy JODA</h2>
-    <input id="buyAmount" type="number" placeholder="BNB amount" />
-    <button id="buyBtn">Buy</button>
+    <div class="row">
+      <!-- BUY -->
+      <div class="card">
+        <h2 id="buyTitle">Buy JODA</h2>
+        <div class="kv">
+          <label for="buyAmount">BNB to spend</label>
+          <input id="buyAmount" type="number" step="0.0001" placeholder="0.05" />
+        </div>
+        <button id="buyBtn">Buy</button>
 
-    <h2 id="stakeTitle">Stake JODA</h2>
-    <input id="stakeAmount" type="number" placeholder="JODA amount" />
-    <select id="stakeMonths">
-      <option>3</option><option>6</option><option>12</option><option>24</option><option>36</option>
-    </select>
-    <button id="approveBtn">Approve</button>
-    <button id="stakeBtn">Stake</button>
+        <h3 id="saleStatusTitle" style="margin-top:18px;">Sale Status</h3>
+        <div class="kv"><span>Active</span><span id="saleActive">--</span></div>
+        <div class="kv"><span>Min (BNB)</span><span id="saleMin">--</span></div>
+        <div class="kv"><span>Tokens / 1 BNB</span><span id="saleRate">--</span></div>
+        <div class="kv"><span>Available (JODA)</span><span id="saleAvail">--</span></div>
+      </div>
 
-    <h2 id="balanceTitle">Your Balances</h2>
-    <div>BNB: <span id="balanceBNB">--</span></div>
-    <div>JODA: <span id="balanceJODA">--</span></div>
+      <!-- STAKE -->
+      <div class="card">
+        <h2 id="stakeTitle">Stake JODA</h2>
+        <div class="kv">
+          <label for="stakeAmount">Amount (JODA)</label>
+          <input id="stakeAmount" type="number" step="1" placeholder="100" />
+        </div>
+        <div class="kv">
+          <label for="stakeMonths">Lock (months)</label>
+          <select id="stakeMonths">
+            <option>3</option><option>6</option><option>12</option><option>24</option><option>36</option>
+          </select>
+        </div>
+        <div class="kv" style="gap:8px">
+          <button id="approveBtn">Approve</button>
+          <button id="stakeBtn">Stake</button>
+        </div>
+      </div>
+    </div>
 
-    <h2 id="saleStatusTitle">Sale Status</h2>
-    <div>Active: <span id="saleActive">--</span></div>
-    <div>Min (BNB): <span id="saleMin">--</span></div>
-    <div>Tokens / 1 BNB: <span id="saleRate">--</span></div>
-    <div>Available: <span id="saleAvail">--</span></div>
+    <!-- BALANCES -->
+    <div class="card" style="margin-top:16px">
+      <h2 id="balanceTitle">Your Balances</h2>
+      <div class="kv"><span>BNB</span><span id="balanceBNB">--</span></div>
+      <div class="kv"><span>JODA</span><span id="balanceJODA">--</span></div>
+    </div>
 
-    <h3 id="howTitle">How it works</h3>
+    <!-- ADDRESSES / REF -->
+    <div class="card" style="margin-top:16px">
+      <h3>Addresses</h3>
+      <div class="kv"><span>Your wallet</span><input id="addrUser" class="addr" readonly /></div>
+      <div class="kv"><span>Sale</span><input id="addrSale" class="addr" readonly /></div>
+      <div class="kv"><span>Staking</span><input id="addrStaking" class="addr" readonly /></div>
+      <div class="kv"><span>Referral link</span>
+        <input id="refLink" class="addr" readonly />
+        <button id="copyRef">Copy</button>
+      </div>
+    </div>
+
+    <h3 id="howTitle" style="margin-top:24px">How it works</h3>
+    <p class="muted">Connect wallet → Buy JODA (Testnet) → Approve → Stake → Unstake at maturity.</p>
   </section>
 </body>
 </html>
