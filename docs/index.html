@@ -16,26 +16,79 @@
 </head>
 <body>
   <!-- NAV -->
-  <header class="nav">
-    <a class="brand" href="#top" aria-label="Home">
-      <img src="JODALogo.png" alt="JODA" class="brand__logo">
-      <div class="brand__text">
-        <span class="brand__name">JODALINE</span>
-        <span class="brand__ticker">(JODA)</span>
-      </div>
-    </a>
-    <nav class="nav__links">
-      <a href="#hero">Home</a>
-      <a href="#categories">Shop</a>
-      <a href="#how">How it works</a>
-      <a href="#buy-stake">Buy & Stake</a>
-      <a href="#roadmap">Roadmap</a>
-    </nav>
-    <div class="nav__actions">
-      <button id="connectBtn" class="btn btn--primary">🔗 Connect</button>
-      <button id="disconnectBtn" class="btn btn--ghost">🚪</button>
+ <header class="site-header">
+  <nav class="nav">
+    <!-- LEFT: brand + primary nav -->
+    <div class="nav__left">
+      <!-- Hamburger (drawer coming later) -->
+      <button class="icon-btn" id="menuBtn" aria-label="Open menu">☰</button>
+
+      <!-- Brand -->
+      <a class="brand" href="index.html">
+        <img src="JODALogo.png" alt="JODA Logo" />
+        <span class="brand__name">JODALINE <span class="brand__ticker">(JODA)</span></span>
+      </a>
+
+      <!-- Primary links -->
+      <ul class="nav__links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="#shop">Shop</a></li>
+        <li><a href="#how">How it works</a></li>
+        <li><a href="#roadmap">Roadmap</a></li>
+        <li><a href="#events">Events</a></li>
+      </ul>
     </div>
-  </header>
+
+    <!-- RIGHT: search, Buy, Wallet, language, theme, login -->
+    <div class="nav__right">
+      <!-- Search -->
+      <form class="nav__search" id="topSearch" role="search">
+        <input type="search" id="searchInput" placeholder="Search products, brands…" aria-label="Search" />
+        <button class="icon-btn" aria-label="Search">🔎</button>
+      </form>
+
+      <!-- Buy JODA -->
+      <a class="btn btn--primary" href="#buy">Buy JODA</a>
+
+      <!-- Wallet (placeholder; can route to a wallet page later) -->
+      <a class="btn btn--ghost" href="#wallet">Wallet</a>
+
+      <!-- Language (globe + native <select>) -->
+      <div class="lang">
+        <span class="lang__globe" aria-hidden="true">🌍</span>
+        <select id="languageSelector" class="lang__select" aria-label="Choose language" title="Language">
+          <option value="en">English</option>
+          <option value="de">Deutsch</option>
+          <option value="fr">Français</option>
+          <option value="es">Español</option>
+          <option value="it">Italiano</option>
+          <option value="pt">Português</option>
+          <option value="ru">Русский</option>
+          <option value="uk">Українська</option>
+          <option value="tr">Türkçe</option>
+          <option value="ar">العربية</option>
+          <option value="zh">中文</option>
+          <option value="ja">日本語</option>
+          <option value="ko">한국어</option>
+          <option value="sw">Kiswahili</option>
+          <option value="am">አማርኛ</option>
+          <option value="pl">Polski</option>
+          <option value="el">Ελληνικά</option>
+          <option value="nl">Nederlands</option>
+          <option value="ro">Română</option>
+          <option value="hi">हिन्दी</option>
+        </select>
+      </div>
+      <!-- Theme toggle -->
+      <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">🌙</button>
+
+      <!-- Login (opens modal) -->
+      <button id="loginBtn" class="icon-btn" aria-label="Login">👤</button>
+    </div>
+  </nav>
+</header>
+
+
 
   <!-- HERO -->
   <section id="hero" class="hero">
