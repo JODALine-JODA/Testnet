@@ -5,30 +5,176 @@
   --card:rgba(255,255,255,.06);
   --brand:#5bbcff; --acc:#2b72ff; --acc2:#00c2ff;
 }
-*{box-sizing:border-box} html,body{height:100%}
-body{
-  margin:0; font-family:Inter,system-ui,Arial,sans-serif; color:var(--fg);
-  background:
-    radial-gradient(1000px 520px at -10% -10%, rgba(0,194,255,.17), transparent 60%),
-    radial-gradient(900px 420px at 110% -10%, rgba(30,144,255,.17), transparent 60%),
-    linear-gradient(165deg, var(--bg), var(--bg2));
+/* =========================
+   HEADER & NAVIGATION
+   ========================= */
+.site-header {
+  background: linear-gradient(90deg, #0a192f, #1e3a8a);
+  color: #fff;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
-/* NAV */
-.nav{
-  position:sticky; top:0; z-index:20;
-  display:flex; align-items:center; justify-content:space-between; gap:12px;
-  padding:14px 18px; border-bottom:1px solid var(--edge);
-  background:rgba(5,10,20,.5); backdrop-filter: blur(6px);
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 12px 20px;
 }
-.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit}
-.brand__logo{height:44px;width:44px;border-radius:50%}
-.brand__name{font-weight:800;letter-spacing:.3px}
-.brand__ticker{color:var(--muted);margin-left:6px}
-.nav__links{display:flex;gap:14px;flex-wrap:wrap}
-.nav__links a{color:#cfe3ff;text-decoration:none;border-bottom:1px dashed transparent}
-.nav__links a:hover{border-bottom-color:var(--edge)}
-.nav__actions{display:flex;gap:8px}
+
+/* LEFT side */
+.nav__left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Brand */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+.brand img {
+  height: 42px;
+  width: auto;
+}
+.brand__name {
+  font-weight: 700;
+  font-size: 18px;
+  color: #93c5fd;
+}
+.brand__ticker {
+  font-size: 14px;
+  color: #bcd2ff;
+}
+
+/* Primary links */
+.nav__links {
+  display: flex;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.nav__links a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 6px 8px;
+  transition: color 0.2s, background 0.2s;
+}
+.nav__links a:hover {
+  color: #93c5fd;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+}
+
+/* RIGHT side */
+.nav__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Search box */
+.nav__search {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.nav__search input {
+  background: transparent;
+  border: none;
+  padding: 6px 10px;
+  color: #fff;
+  width: 160px;
+}
+.nav__search input::placeholder {
+  color: rgba(255,255,255,0.6);
+}
+.nav__search button {
+  background: none;
+  border: none;
+  color: #fff;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+/* Buttons */
+.btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  transition: background 0.2s, color 0.2s;
+}
+.btn--primary {
+  background: #2563eb;
+  color: #fff;
+}
+.btn--primary:hover {
+  background: #1e40af;
+}
+.btn--ghost {
+  border: 1px solid #93c5fd;
+  color: #93c5fd;
+}
+.btn--ghost:hover {
+  background: rgba(147,197,253,0.15);
+}
+
+/* Language selector */
+.lang {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.lang__globe {
+  font-size: 20px;
+}
+.lang__select {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: #fff;
+  padding: 6px;
+  border-radius: 6px;
+}
+.lang__select option {
+  color: #000;
+}
+/* Responsive */
+@media (max-width: 900px) {
+  .nav__links {
+    display: none; /* later we can show with menuBtn */
+  }
+  .nav__search input {
+    width: 100px;
+  }
+}
 
 /* HERO */
 .hero{
