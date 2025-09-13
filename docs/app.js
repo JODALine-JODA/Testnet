@@ -400,7 +400,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function fullRefresh() {
     await Promise.all([refreshSale(), refreshBalances()]);
   }
+
   function startAutoRefresh() {
     setInterval(refreshBalances, 20000);
+  }
+}); // end of main DOMContentLoaded
+
+// --- Language globe trigger ---
+document.addEventListener('DOMContentLoaded', () => {
+  const langBtn = document.getElementById('langBtn');
+  const langSel = document.getElementById('languageSelector');
+  if (langBtn && langSel) {
+    langBtn.addEventListener('click', () => langSel.click());
   }
 });
