@@ -237,3 +237,93 @@ input[type="number"], .addr, select{
 /* FOOTER & STATUS */
 .status{text-align:center;color:var(--muted);margin:12px 0}
 .footer{border-top:1px solid var(--edge); padding:16px; text-align:center; color:var(--muted)}
+
+/* -------- Header containment & alignment -------- */
+.site-header .nav{
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Left cluster (brand + links) */
+.nav__left{
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.nav__links{
+  display: flex;
+  align-items: center;
+  gap: 20px;                 /* tighter spacing */
+}
+.nav__links a{
+  font-weight: 700;          /* bolder */
+  font-size: 15px;           /* slightly smaller but stronger */
+  line-height: 1;
+  text-decoration: none;
+  color: var(--fg, #eaf2ff);
+  padding: 10px 0;           /* keeps items on one straight baseline */
+}
+
+/* Right cluster (search + buttons) */
+.nav__right{
+  display: flex;
+  align-items: center;
+  gap: 12px;                 /* tighter spacing */
+}
+
+/* Search */
+.nav__search{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav__search input{
+  width: 240px;              /* compact */
+  max-width: 32vw;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--edge, rgba(255,255,255,.10));
+  background: rgba(255,255,255,.06);
+  color: var(--fg, #eaf2ff);
+  padding: 0 12px;
+}
+.nav__search .icon-btn{
+  width: 36px; height: 36px;
+}
+
+/* Primary/Ghost buttons in header (Buy JODA, Wallet) */
+.btn{ height: 36px; padding: 0 14px; border-radius: 10px; display: inline-flex; align-items: center; }
+.btn--primary{ background: var(--acc2, #00c2ff); color:#001a2a; font-weight:800; border:1px solid rgba(255,255,255,.15); }
+.btn--ghost{ background: transparent; color: var(--fg,#eaf2ff); border:1px solid var(--edge, rgba(255,255,255,.10)); }
+.btn:hover{ filter: brightness(1.05); }
+
+/* Globe-triggered language (icon only) */
+.lang{ position: relative; }
+#langBtn.icon-btn{ width: 36px; height: 36px; }
+.lang__select{
+  position: absolute;
+  inset: 0;                  /* sits over the globe */
+  opacity: 0;                /* invisible but clickable */
+  cursor: pointer;
+  width: 36px; height: 36px;
+  appearance: none;
+}
+
+/* Theme toggle (icon only) */
+.icon-btn{
+  width: 36px; height: 36px;
+  display: inline-grid; place-items: center;
+  border-radius: 10px;
+  border: 1px solid var(--edge, rgba(255,255,255,.10));
+  background: rgba(255,255,255,.06);
+  color: var(--fg, #eaf2ff);
+}
+.icon-btn:hover{ filter: brightness(1.05); }
+
+/* Keep hamburger & login inside the page width */
+#menuBtn, #loginBtn{ flex: 0 0 auto; }
