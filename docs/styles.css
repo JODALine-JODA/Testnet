@@ -1,4 +1,4 @@
-o:root{
+ko:root{
   --bg:#091427; --bg2:#0f1e38;
   --fg:#eaf2ff; --muted:#9db3d9;
   --edge:rgba(108,177,255,.25);
@@ -508,4 +508,19 @@ body {
   width: 100%;
   margin: 0;
   padding: 12px 32px;   /* breathing space left & right */
+}
+
+/* Expand all main sections full-width */
+body, .hero, .shop-categories, .site-header, .nav, .container {
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 auto;
+  padding-left: 32px;
+  padding-right: 32px;
+}
+
+/* Cards inside should still have limits */
+.card, .badge, .walletState {
+  max-width: 1240px;
+  margin: 0 auto;
 }
