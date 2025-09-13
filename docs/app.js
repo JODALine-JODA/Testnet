@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.body.classList.toggle('light', storedTheme === 'light');
   document.body.classList.toggle('dark', storedTheme !== 'light');
   if (themeBtn) {
-    themeBtn.textContent = storedTheme === 'light' ? '🌙 Dark' : '☀️ Light';
+    themeBtn.textContent = storedTheme === 'light' ? '🌙' : '☀️ Light';
     themeBtn.onclick = () => {
       const nowLight = !document.body.classList.contains('light');
       document.body.classList.toggle('light', nowLight);
