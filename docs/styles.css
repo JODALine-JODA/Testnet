@@ -1,4 +1,4 @@
-:root{
+o:root{
   --bg:#091427; --bg2:#0f1e38;
   --fg:#eaf2ff; --muted:#9db3d9;
   --edge:rgba(108,177,255,.25);
@@ -501,4 +501,11 @@ body {
   justify-content: space-between;
   gap: 16px;
 }
-
+/* Full-width modern layout */
+.container,
+.site-header .nav {
+  max-width: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 12px 32px;   /* breathing space left & right */
+}
