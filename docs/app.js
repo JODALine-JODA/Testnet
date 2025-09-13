@@ -97,13 +97,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.body.classList.toggle('light', storedTheme === 'light');
   document.body.classList.toggle('dark', storedTheme !== 'light');
   if (themeBtn) {
-    themeBtn.textContent = storedTheme === 'light' ? '🌙' : '☀️ Light';
+    themeBtn.textContent = storedTheme === 'light' ? '🌙' : '☀️';
     themeBtn.onclick = () => {
       const nowLight = !document.body.classList.contains('light');
       document.body.classList.toggle('light', nowLight);
       document.body.classList.toggle('dark', !nowLight);
       localStorage.setItem('theme', nowLight ? 'light' : 'dark');
-      themeBtn.textContent = nowLight ? '🌙 Dark' : '☀️ Light';
+      themeBtn.textContent = nowLight ? '🌙' : '☀️';
     };
   }
 
