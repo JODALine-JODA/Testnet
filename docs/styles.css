@@ -327,3 +327,104 @@ input[type="number"], .addr, select{
 
 /* Keep hamburger & login inside the page width */
 #menuBtn, #loginBtn{ flex: 0 0 auto; }
+
+/* ==== Top bar refinements (compact, aligned) ==== */
+
+/* Keep header bounded and a bit wider */
+.site-header .nav{
+  max-width: 1280px; /* was 1240; gives us a touch more room */
+  margin: 0 auto;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Brand cluster: tighter spacing + smaller logo gap */
+.brand{ gap: 10px; }
+.brand__name{ font-weight: 800; letter-spacing: .3px; }
+.brand__ticker{ color: var(--acc2, #00c2ff); margin-left: 6px; }
+
+/* Primary nav links: slightly tighter and bolder for a single line */
+.nav__links{ gap: 18px; }
+.nav__links a{
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1;
+  padding: 10px 0;         /* keeps everything on one baseline */
+}
+
+/* Right cluster alignment */
+.nav__right{ gap: 10px; }
+
+/* Search: make it slimmer */
+.nav__search{ gap: 6px; }
+.nav__search input{
+  width: 200px;            /* was larger; saves space */
+  max-width: 28vw;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--edge, rgba(255,255,255,.10));
+  background: rgba(255,255,255,.06);
+  color: var(--fg, #eaf2ff);
+  padding: 0 10px;
+}
+.nav__search .icon-btn{ width: 34px; height: 34px; }
+
+/* Header buttons (Buy / Wallet) kept compact */
+.btn{ height: 34px; padding: 0 12px; border-radius: 10px; }
+
+/* Icon-only buttons (globe / theme / login): small & tightly wrapped */
+.icon-btn{
+  width: 32px; height: 32px;            /* smaller */
+  display: inline-grid; place-items: center;
+  padding: 0; line-height: 1;
+  border-radius: 8px;
+  border: 1px solid var(--edge, rgba(255,255,255,.10));
+  background: rgba(255,255,255,.06);
+  color: var(--fg, #eaf2ff);
+  font-size: 16px;                       /* keeps emoji/symbol tight */
+}
+.icon-btn:hover{ filter: brightness(1.05); }
+
+/* Make sure the absolute <select> overlay for language matches the small icon */
+.lang{ position: relative; }
+#langBtn.icon-btn{ width: 32px; height: 32px; }
+.lang__select{
+  position: absolute;
+  inset: 0;
+  width: 32px; height: 32px;
+  opacity: 0;
+  cursor: pointer;
+  appearance: none;
+}
+
+/* Keep hamburger & login inside container width */
+#menuBtn, #loginBtn{ flex: 0 0 auto; }
+
+/* Slightly more room at very small widths */
+@media (max-width: 900px){
+  .nav__search input{ width: 150px; }
+  .nav__links{ gap: 14px; }
+}
+/* ====== Expand site body width ====== */
+
+/* Main container and sections should match the nav width */
+.container, main, section, .hero, .card, .aff-card {
+  max-width: 1280px;   /* same as .site-header .nav */
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Allow cards and grids to stretch naturally */
+.hero, .card, .aff-card {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/* Optional: bump inner grids so they don’t look cramped */
+.hero_copy, .categories, .walletState, .stake, .buy {
+  max-width: 100%;
+}
+
