@@ -19,6 +19,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     el.textContent = msg;
     el.style.color = color;
   };
+  document.addEventListener('DOMContentLoaded', () => {
+  const langBtn = document.getElementById('langBtn');
+  const langSel = document.getElementById('languageSelector');
+  if (langBtn && langSel) {
+    langBtn.addEventListener('click', () => langSel.click());
+  }
+});
 
   // ------------------ Sanity checks ------------------
   if (!window.ethers) {
