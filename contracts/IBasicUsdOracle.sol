@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.30;
 
 /// @notice Interface for converting tokens → USD (18 decimals)
 interface IBasicUsdOracle {
