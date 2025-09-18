@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.9.5/contracts/token/ERC20/ERC20.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.9.5/contracts/access/AccessControl.sol";
 
 contract JodaToken is ERC20, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     uint256 public constant MAX_SUPPLY = 1_000_000_000e18; // 1B JODA
 
-    constructor(address admin) ERC20("Jodaline • JODA", "JODA") {
+    constructor(address admin) ERC20("Jodaline JODA", "JODA") {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
     }
 
