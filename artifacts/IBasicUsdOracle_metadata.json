@@ -1,0 +1,94 @@
+{
+	"compiler": {
+		"version": "0.8.30+commit.73712a01"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"name": "quoteTokens",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "wbnb",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "usdt",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "usdc",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "quoteToken",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "toUsd",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "usd18",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"notice": "Interface for converting tokens → USD (18 decimals)",
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/IBasicUsdOracle.sol": "IBasicUsdOracle"
+		},
+		"evmVersion": "prague",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": true,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/IBasicUsdOracle.sol": {
+			"keccak256": "0x76c7d0c6b5af16a71a3ddadf6331f29eae8542676793e2f5f70ef2bd1d451048",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://1a0272f0e5ca58dfb0a7aae9d6645719de41c75496a83ef2bcfa75c2e5079773",
+				"dweb:/ipfs/QmYYsuBWPPwtfpg8deUXFczkfxaEP8hN6Ydis5JAc6c2yL"
+			]
+		}
+	},
+	"version": 1
+}
